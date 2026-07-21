@@ -12,9 +12,9 @@
         "reasoning": "Family favorite, supplemented with boiled eggs for high protein as per R002."
       },
       "lunch": {
-        "dish_id": "D019",
-        "dish_name": "Rice, Mixed Dal, Paneer Capsicum Dry",
-        "reasoning": "High protein lunch for Shloka and family, using Paneer as concentrated protein. Complexity 2 is allowed once on weekdays."
+        "dish_id": "D020",
+        "dish_name": "Rice, Mixed Dal, Egg Burji",
+        "reasoning": "High protein lunch with Egg, complexity 1 for weekday. Distinct from breakfast's Paneer."
       },
       "dinner": {
         "dish_id": "D019",
@@ -35,9 +35,9 @@
         "reasoning": "High protein breakfast with Paneer, complexity 1 for weekday."
       },
       "lunch": {
-        "dish_id": "D020",
-        "dish_name": "Rice, Mixed Dal, Egg Burji",
-        "reasoning": "High protein lunch with Egg, complexity 1 for weekday. Distinct from breakfast's Paneer."
+        "dish_id": "D019",
+        "dish_name": "Rice, Mixed Dal, Paneer Capsicum Dry",
+        "reasoning": "High protein lunch for Shloka and family, using Paneer as concentrated protein. Complexity 2 is allowed once on weekdays."
       },
       "dinner": {
         "dish_id": "D020",
