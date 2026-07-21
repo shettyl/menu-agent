@@ -1,0 +1,69 @@
+name: Poll Telegram Replies
+
+on:
+  # Every 30 minutes
+  schedule:
+    - cron: '*/30 * * * *'
+  # Also allow manual trigger from GitHub UI
+  workflow_dispatch:
+
+# Prevent overlapping runs — if a previous run is still going, cancel it
+concurrency:
+  group: poll-replies
+  cancel-in-progress: false
+
+# Grant write permission so the workflow can commit updated plan/state back
+permissions:
+  contents: write
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          # Fetch full history so we can push back cleanly
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Write service account key to disk
+        env:
+          SERVICE_ACCOUNT_JSON: ${{ secrets.SERVICE_ACCOUNT_JSON }}
+        run: |
+          echo "$SERVICE_ACCOUNT_JSON" > service-account-key.json
+
+      - name: Run poller
+        env:
+          GEMINI_API_KEY:     ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_SHEET_ID:    ${{ secrets.GOOGLE_SHEET_ID }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          LOKESH_USER_ID:     ${{ secrets.LOKESH_USER_ID }}
+          ANITHA_USER_ID:     ${{ secrets.ANITHA_USER_ID }}
+        run: python poll_replies.py
+
+      - name: Commit updated plan and state
+        run: |
+          git config user.name "menu-agent-bot"
+          git config user.email "bot@menu-agent.local"
+          # Only commit if state or plan actually changed
+          if git diff --quiet state.json latest_week_plan.json 2>/dev/null; then
+            echo "No changes to commit."
+          else
+            git add state.json latest_week_plan.json
+            git commit -m "poller: auto-update from replies [skip ci]"
+            git pull --rebase origin main
+            git push
+          fi
