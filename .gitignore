@@ -3,3 +3,5 @@
 service-account-key.json
 __pycache__/
 *.pyc
+latest_week_plan.json
+latest_grocery_list.json
