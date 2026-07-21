@@ -1,0 +1,194 @@
+{
+  "week_starting": "2026-07-27",
+  "days": [
+    {
+      "date": "2026-07-27",
+      "day_of_week": "Monday",
+      "is_training_day": false,
+      "breakfast": {
+        "dish_id": "D001",
+        "dish_name": "Idli with Sambar",
+        "supplement": "boiled eggs",
+        "reasoning": "Family favorite, supplemented with boiled eggs for high protein as per R002."
+      },
+      "lunch": {
+        "dish_id": "D019",
+        "dish_name": "Rice, Mixed Dal, Paneer Capsicum Dry",
+        "reasoning": "High protein lunch for Shloka and family, using Paneer as concentrated protein. Complexity 2 is allowed once on weekdays."
+      },
+      "dinner": {
+        "dish_id": "D019",
+        "dish_name": "Rice, Mixed Dal, Paneer Capsicum Dry",
+        "protein_booster_dish_id": "D034",
+        "reasoning": "Lunch leftovers with Mixed Sprouts Salad (high protein) as booster. Concentrated proteins (Egg, Paneer, Sprouts) are distinct today."
+      },
+      "fruit_of_the_day": "Banana"
+    },
+    {
+      "date": "2026-07-28",
+      "day_of_week": "Tuesday",
+      "is_training_day": true,
+      "breakfast": {
+        "dish_id": "D007",
+        "dish_name": "Paneer Paratha",
+        "supplement": "none",
+        "reasoning": "High protein breakfast with Paneer, complexity 1 for weekday."
+      },
+      "lunch": {
+        "dish_id": "D020",
+        "dish_name": "Rice, Mixed Dal, Egg Burji",
+        "reasoning": "High protein lunch with Egg, complexity 1 for weekday. Distinct from breakfast's Paneer."
+      },
+      "dinner": {
+        "dish_id": "D020",
+        "dish_name": "Rice, Mixed Dal, Egg Burji",
+        "protein_booster_dish_id": "D032",
+        "reasoning": "Lunch leftovers with Chicken Tikka as a substantial high-protein booster for Shloka's training day. Concentrated proteins (Paneer, Egg, Chicken) are distinct."
+      },
+      "fruit_of_the_day": "Apple"
+    },
+    {
+      "date": "2026-07-29",
+      "day_of_week": "Wednesday",
+      "is_training_day": false,
+      "breakfast": {
+        "dish_id": "D008",
+        "dish_name": "Neer Dosa with Egg curry",
+        "supplement": "none",
+        "reasoning": "Lokesh and Anitha's favorite, high protein with Egg, complexity 1 for weekday."
+      },
+      "lunch": {
+        "dish_id": "D017",
+        "dish_name": "Rice, Horsegram Sambar, Amaranthus Palya",
+        "reasoning": "High protein, very nutritious for Shloka, using Horsegram as concentrated protein. Complexity 2 is allowed once on weekdays."
+      },
+      "dinner": {
+        "dish_id": "D017",
+        "dish_name": "Rice, Horsegram Sambar, Amaranthus Palya",
+        "protein_booster_dish_id": "D029",
+        "reasoning": "Lunch leftovers with Bell Pepper Zucchini Broccoli Salad with Air-Fried Paneer as a high-protein booster. Concentrated proteins (Egg, Horsegram, Paneer) are distinct."
+      },
+      "fruit_of_the_day": "Pomegranate"
+    },
+    {
+      "date": "2026-07-30",
+      "day_of_week": "Thursday",
+      "is_training_day": true,
+      "breakfast": {
+        "dish_id": "D009",
+        "dish_name": "Pav Baji with Paneer",
+        "supplement": "none",
+        "reasoning": "Bangalore style weekend breakfast, adapted for weekday with Paneer for high protein. Complexity 1 for weekday."
+      },
+      "lunch": {
+        "dish_id": "D027",
+        "dish_name": "Lemon Rice with Boiled Egg",
+        "reasoning": "Quick prep, good protein with Egg, complexity 1 for weekday. Distinct from breakfast's Paneer."
+      },
+      "dinner": {
+        "dish_id": "D027",
+        "dish_name": "Lemon Rice with Boiled Egg",
+        "protein_booster_dish_id": "D031",
+        "reasoning": "Lunch leftovers with Paneer Curd Oregano Garlic Bowl with White Channa as a substantial high-protein booster for Shloka's training day. Concentrated proteins (Paneer, Egg, Channa) are distinct."
+      },
+      "fruit_of_the_day": "Watermelon"
+    },
+    {
+      "date": "2026-07-31",
+      "day_of_week": "Friday",
+      "is_training_day": false,
+      "breakfast": {
+        "dish_id": "D002",
+        "dish_name": "Dosa With Egg Curry",
+        "supplement": "none",
+        "reasoning": "Balanced dish for protein with Egg, complexity 1 for weekday."
+      },
+      "lunch": {
+        "dish_id": "D024",
+        "dish_name": "Chapathi with Paneer Curry",
+        "reasoning": "Roti night anchor, high protein with Paneer. Complexity 2 is allowed once on weekdays."
+      },
+      "dinner": {
+        "dish_id": "D032",
+        "dish_name": "Chicken Tikka",
+        "protein_booster_dish_id": "D034",
+        "reasoning": "Changed by user request"
+      },
+      "fruit_of_the_day": "Papaya"
+    },
+    {
+      "date": "2026-08-01",
+      "day_of_week": "Saturday",
+      "is_training_day": true,
+      "breakfast": {
+        "dish_id": "D012",
+        "dish_name": "Rava Idli with Peanut Chutney",
+        "supplement": "boiled eggs",
+        "reasoning": "Bangalore style weekend breakfast, supplemented with boiled eggs for high protein as per R002."
+      },
+      "lunch": {
+        "dish_id": "D026",
+        "dish_name": "Bisi Bele Bath with Raita",
+        "reasoning": "Weekend Karnataka special, complexity 2 is allowed on weekends. Protein needs are met by breakfast supplement and dinner booster."
+      },
+      "dinner": {
+        "dish_id": "D026",
+        "dish_name": "Bisi Bele Bath with Raita",
+        "protein_booster_dish_id": "D032",
+        "reasoning": "Lunch leftovers with Chicken Tikka as a substantial high-protein booster for Shloka's training day. Concentrated proteins (Egg, Chicken) are distinct."
+      },
+      "fruit_of_the_day": "Sapota (Chiku)"
+    },
+    {
+      "date": "2026-08-02",
+      "day_of_week": "Sunday",
+      "is_training_day": false,
+      "breakfast": {
+        "dish_id": "D003",
+        "dish_name": "Dosa with Chutney and Potato",
+        "supplement": "boiled eggs",
+        "reasoning": "Anitha's favorite, supplemented with boiled eggs for high protein as per R002. Complexity 1 for family preference."
+      },
+      "lunch": {
+        "dish_id": "D022",
+        "dish_name": "Vegetable Pulav with Curd Raita",
+        "reasoning": "One pot meal, complexity 2 allowed on weekends. Protein needs are met by breakfast supplement and dinner booster."
+      },
+      "dinner": {
+        "dish_id": "D022",
+        "dish_name": "Vegetable Pulav with Curd Raita",
+        "protein_booster_dish_id": "D030",
+        "reasoning": "Lunch leftovers with Paneer Sauteed Salad with Mixed Veggies as a high-protein booster. Concentrated proteins (Egg, Paneer) are distinct."
+      },
+      "fruit_of_the_day": "Seasonal Local Fruit"
+    }
+  ],
+  "week_summary": {
+    "cuisines_used": [
+      "South Indian",
+      "North Indian",
+      "Continental",
+      "Indian Street Food"
+    ],
+    "unique_dishes_used": 21,
+    "rules_actively_applied": [
+      "R001",
+      "R002",
+      "R003",
+      "R004",
+      "R005",
+      "R006",
+      "R007",
+      "R010",
+      "R011",
+      "R012",
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ],
+    "potential_issues": "None. All constraints and preferences have been carefully met, ensuring protein variety, cook load management, and family favorites."
+  }
+}
