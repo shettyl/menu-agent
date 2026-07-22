@@ -349,7 +349,11 @@ def try_parse_rating(text):
 
 
 def save_rating_to_sheet(plan, ratings):
-    """Persist today's ratings to Google Sheets 'feedback' tab."""
+    """
+    Persist today's ratings to Google Sheets 'feedback' tab.
+    Returns True on success, False if today isn't in the plan.
+    Raises on real errors (sheet write failure).
+    """
     from load_data import get_sheet
     sheet = get_sheet()
     ws = sheet.worksheet("feedback")
@@ -362,8 +366,8 @@ def save_rating_to_sheet(plan, ratings):
             break
 
     if not day:
-        print(f"   No plan entry for today ({today}); rating skipped.")
-        return
+        print(f"   No plan entry for today ({today}).")
+        return False
 
     slots = [("breakfast", ratings[0]), ("lunch", ratings[1]), ("dinner", ratings[2])]
     for meal_slot, rating in slots:
@@ -373,6 +377,7 @@ def save_rating_to_sheet(plan, ratings):
         row = [today, meal_slot, dish_id, int(rating), ""]
         ws.append_row(row, value_input_option="USER_ENTERED")
         print(f"   Wrote rating: {meal_slot} = {rating} for {dish_id}")
+    return True
 
 
 # =========================================================
@@ -393,11 +398,8 @@ def handle_message(client, plan, dishes, message):
 
     print(f"📨 Message from {user_id}: {text[:80]}")
 
-    if not looks_menu_related(text):
-        print(f"   Skipped (no menu keywords)")
-        return None
-
-    # Rating check
+    # Rating check FIRST — before keyword filter
+    # (rating messages are numbers like "4,3,5" and won't match menu keywords)
     rating = try_parse_rating(text)
     if rating == "skip":
         print("   User skipped feedback")
@@ -405,13 +407,25 @@ def handle_message(client, plan, dishes, message):
     if isinstance(rating, tuple):
         print(f"   Detected rating: {rating}")
         try:
-            save_rating_to_sheet(plan, rating)
-            return f"✅ Thanks! Ratings saved: BF={rating[0]}, Lunch={rating[1]}, Dinner={rating[2]}"
+            saved = save_rating_to_sheet(plan, rating)
+            if saved:
+                return f"✅ Thanks! Ratings saved: BF={rating[0]}, Lunch={rating[1]}, Dinner={rating[2]}"
+            else:
+                today_str = date.today().isoformat()
+                return (
+                    f"🤔 Got your rating ({rating[0]},{rating[1]},{rating[2]}), "
+                    f"but today ({today_str}) isn't in the current menu plan. "
+                    f"Rating not saved."
+                )
         except Exception as e:
             print(f"   Failed to save rating: {e}")
             return f"⚠️ Got your rating but couldn't save it: {e}"
 
-    # Otherwise, treat as menu edit intent
+    # Now the keyword filter for edit intents
+    if not looks_menu_related(text):
+        print(f"   Skipped (no menu keywords)")
+        return None
+
     summary = summarize_plan(plan)
     try:
         parsed = parse_message(client, text, summary)
