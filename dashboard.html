@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#0f766e"/>
+<title>Shetty Family Menu — Week of 2026-07-27</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0; padding: 0;
+    background: #f5f5f4;
+    color: #1c1917;
+    line-height: 1.4;
+  }
+  .container { max-width: 720px; margin: 0 auto; padding: 16px; }
+  header {
+    background: linear-gradient(135deg, #0f766e, #0e7490);
+    color: white;
+    padding: 24px 16px;
+    text-align: center;
+  }
+  header h1 { margin: 0; font-size: 22px; font-weight: 600; }
+  header .subtitle { margin-top: 4px; font-size: 14px; opacity: 0.9; }
+  h2 { font-size: 18px; margin: 24px 0 12px; color: #0f766e; }
+  .day-card {
+    background: white;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .day-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #e7e5e4;
+    padding-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .day-emoji { font-size: 20px; }
+  .day-name { font-weight: 600; font-size: 16px; }
+  .day-date { color: #78716c; font-size: 13px; }
+  .training-tag {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .meal { display: flex; align-items: baseline; gap: 8px; padding: 4px 0; font-size: 14px; }
+  .meal-icon { font-size: 15px; }
+  .meal-label { font-weight: 500; color: #57534e; width: 68px; flex-shrink: 0; }
+  .meal-name { flex: 1; }
+  .supp { background: #dbeafe; color: #1e40af; padding: 1px 6px; border-radius: 6px; font-size: 12px; }
+  .leftovers .meal-name { color: #78716c; font-style: italic; }
+  .leftover-tag {
+    background: #f3f4f6; color: #57534e;
+    padding: 1px 6px; border-radius: 6px; font-size: 11px;
+    margin-left: 4px;
+  }
+  .stars { font-size: 12px; color: #d97706; margin-left: 6px; }
+  .booster {
+    margin-top: 6px; padding: 8px 12px; border-radius: 8px;
+    background: #ecfdf5; color: #065f46;
+    font-size: 13px;
+    border-left: 3px solid #10b981;
+  }
+  .booster-training {
+    background: #fef2f2; color: #991b1b;
+    border-left: 3px solid #ef4444;
+    font-weight: 500;
+  }
+  .fruit {
+    margin-top: 6px; padding: 6px 10px; border-radius: 8px;
+    background: #f0fdf4; color: #166534; font-size: 13px;
+  }
+  .grocery-section {
+    background: white;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .grocery-section h3 { margin: 0 0 8px; font-size: 15px; color: #0f766e; }
+  .grocery-section ul { list-style: none; padding: 0; margin: 0; }
+  .grocery-section li {
+    display: flex; justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid #f5f5f4;
+    font-size: 14px;
+  }
+  .grocery-section li:last-child { border-bottom: none; }
+  .grocery-section .item { color: #1c1917; }
+  .grocery-section .qty { color: #57534e; font-weight: 500; }
+  .notes {
+    background: #fef9c3; color: #713f12;
+    padding: 10px 14px; border-radius: 8px; font-size: 13px;
+    margin-top: 8px;
+  }
+  footer {
+    text-align: center;
+    color: #a8a29e;
+    font-size: 12px;
+    padding: 20px 16px;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>🍽️ Shetty Family Menu</h1>
+    <div class="subtitle">Week of 2026-07-27</div>
+  </header>
+  <div class="container">
+    <h2>📅 This week</h2>
+    
+    <div class="day-card">
+      <div class="day-header">
+        <span class="day-emoji">🌄</span>
+        <span class="day-name">Monday</span>
+        <span class="day-date">2026-07-27</span>
+        
+      </div>
+      
+        <div class="meal">
+          <span class="meal-icon">🍳</span>
+          <span class="meal-label">Breakfast</span>
+          <span class="meal-name">Paneer Paratha </span>
+        </div>
+        
+      
+        <div class="meal">
+          <span class="meal-icon">🍛</span>
+          <span class="meal-label">Lunch</span>
+          <span class="meal-name">Rice, Mixed Dal, Egg Burji <span class='stars'>⭐⭐⭐⭐☆</span></span>
+        </div>
+        
+      
+        <div class="meal leftovers">
+          <span class="meal-icon">🍽️</span>
+          <span class="meal-label">Dinner</span>
+          <span class="meal-name">Lunch leftovers <span class="leftover-tag">reheat</span></span>
+        </div>
+        
+      
+        <div class="booster">
+          💪 Additional high-protein option: <strong>Mixed Sprouts Salad with Lemon</strong>
+        </div>
+        
+      <div class="fruit">🍎 Banana</div>
+    </div>
+    
+
+    <div class="day-card">
+      <div class="day-header">
+        <span class="day-emoji">🌅</span>
+        <span class="day-name">Tuesday</span>
+        <span class="day-date">2026-07-28</span>
+        <span class="training-tag">🏃‍♀️ training day</span>
+      </div>
+      
+        <div class="meal">
+          <span class="meal-icon">🍳</span>
+          <span class="meal-label">Breakfast</span>
+          <span class="meal-name">Neer Dosa with Egg curry </span>
+        </div>
+        
+      
+        <div class="meal">
+          <span class="meal-icon">🍛</span>
+          <span class="meal-label">Lunch</span>
+          <span class="meal-name">Rice, Mixed Dal, Paneer Capsicum Dry <span class='stars'>⭐⭐⭐⭐⭐</span></span>
+        </div>
+        
+      
+        <div class="meal leftovers">
+          <span class="meal-icon">🍽️</span>
+          <span class="meal-label">Dinner</span>
+          <span class="meal-name">Lunch leftovers <span class="leftover-tag">reheat</span></span>
+        </div>
+        
+      
+        <div class="booster booster-training">
+          🥩 Extra protein tonight: <strong>Chicken Tikka</strong>
+        </div>
+        
+      <div class="fruit">🍎 Pomegranate</div>
+    </div>
+    
+
+    <div class="day-card">
+      <div class="day-header">
+        <span class="day-emoji">☀️</span>
+        <span class="day-name">Wednesday</span>
+        <span class="day-date">2026-07-29</span>
+        
+      </div>
+      
+        <div class="meal">
+          <span class="meal-icon">🍳</span>
+          <span class="meal-label">Breakfast</span>
+          <span class="meal-name">Idli with Sambar <span class='supp'>+ boiled eggs</span> <span class='stars'>⭐⭐⭐☆☆</span></span>
+        </div>
+        
+      
+        <div class="meal">
+          <span class="meal-icon">🍛</span>
+          <span class="meal-label">Lunch</span>
+          <span class="meal-name">Rice, Horsegram Sambar, Amaranthus Palya </span>
+        </div>
+        
+      
+        <div class="meal leftovers">
+          <span class="meal-icon">🍽️</span>
+          <span class="meal-label">Dinner</span>
+          <span class="meal-name">Lunch leftovers <span class="leftover-tag">reheat</span></span>
+        </div>
+        
+      
+        <div class="booster">
+          💪 Additional high-protein option: <strong>Bell Pepper Zucchini Broccoli Salad with Air-Fried Paneer</strong>
+        </div>
+        
+      <div class="fruit">🍎 Apple</div>
+    </div>
+    
+
+    <div class="day-card">
+      <div class="day-header">
+        <span class="day-emoji">🌤️</span>
+        <span class="day-name">Thursday</span>
+        <span class="day-date">2026-07-30</span>
+        <span class="training-tag">🏃‍♀️ training day</span>
+      </div>
+      
+        <div class="meal">
+          <span class="meal-icon">🍳</span>
+          <span class="meal-label">Breakfast</span>
+          <span class="meal-name">Pav Baji with Paneer </span>
+        </div>
+        
+      
+        <div class="meal">
+          <span class="meal-icon">🍛</span>
+          <span class="meal-label">Lunch</span>
+          <span class="meal-name">Rice, Palak Sambar, Cabbage Palya </span>
+        </div>
+        
+      
+        <div class="meal leftovers">
+          <span class="meal-icon">🍽️</span>
+          <span class="meal-label">Dinner</span>
+          <span class="meal-name">Lunch leftovers <span class="leftover-tag">reheat</span></span>
+        </div>
+        
+      
+        <div class="booster booster-training">
+          🥩 Extra protein tonight: <strong>Boiled Egg Salad Bowl</strong>
+        </div>
+        
+      <div class="fruit">🍎 Watermelon</div>
+    </div>
+    
+
+    <div class="day-card">
+      <div class="day-header">
+        <span class="day-emoji">🌇</span>
+        <span class="day-name">Friday</span>
+        <span class="day-date">2026-07-31</span>
+        
+      </div>
+      
+        <div class="meal">
+          <span class="meal-icon">🍳</span>
+          <span class="meal-label">Breakfast</span>
+          <span class="meal-name">Thepla with Curd <span class='supp'>+ boiled eggs</span> </span>
+        </div>
+        
+      
+        <div class="meal">
+          <span class="meal-icon">🍛</span>
+          <span class="meal-label">Lunch</span>
+          <span class="meal-name">Rice, Rasam Thondekayi Palya </span>
+        </div>
+        
+      
+        <div class="meal leftovers">
+          <span class="meal-icon">🍽️</span>
+          <span class="meal-label">Dinner</span>
+          <span class="meal-name">Lunch leftovers <span class="leftover-tag">reheat</span></span>
+        </div>
+        
+      
+        <div class="booster">
+          💪 Additional high-protein option: <strong>Paneer Sauteed Salad with Mixed Veggies</strong>
+        </div>
+        
+      <div class="fruit">🍎 Papaya</div>
+    </div>
+    
+
+    <div class="day-card">
+      <div class="day-header">
+        <span class="day-emoji">🎉</span>
+        <span class="day-name">Saturday</span>
+        <span class="day-date">2026-08-01</span>
+        <span class="training-tag">🏃‍♀️ training day</span>
+      </div>
+      
+        <div class="meal">
+          <span class="meal-icon">🍳</span>
+          <span class="meal-label">Breakfast</span>
+          <span class="meal-name">Rava Idli with Peanut Chutney <span class='supp'>+ boiled eggs</span> </span>
+        </div>
+        
+      
+        <div class="meal">
+          <span class="meal-icon">🍛</span>
+          <span class="meal-label">Lunch</span>
+          <span class="meal-name">Bisi Bele Bath with Raita </span>
+        </div>
+        
+      
+        <div class="meal leftovers">
+          <span class="meal-icon">🍽️</span>
+          <span class="meal-label">Dinner</span>
+          <span class="meal-name">Lunch leftovers <span class="leftover-tag">reheat</span></span>
+        </div>
+        
+      
+        <div class="booster booster-training">
+          🥩 Extra protein tonight: <strong>Paneer Curd Oregano Garlic Bowl with White Channa</strong>
+        </div>
+        
+      <div class="fruit">🍎 Sapota (Chiku)</div>
+    </div>
+    
+
+    <div class="day-card">
+      <div class="day-header">
+        <span class="day-emoji">🕊️</span>
+        <span class="day-name">Sunday</span>
+        <span class="day-date">2026-08-02</span>
+        
+      </div>
+      
+        <div class="meal">
+          <span class="meal-icon">🍳</span>
+          <span class="meal-label">Breakfast</span>
+          <span class="meal-name">Dosa with Chutney and Potato <span class='supp'>+ boiled eggs</span> </span>
+        </div>
+        
+      
+        <div class="meal">
+          <span class="meal-icon">🍛</span>
+          <span class="meal-label">Lunch</span>
+          <span class="meal-name">Vegetable Pulav with Curd Raita </span>
+        </div>
+        
+      
+        <div class="meal leftovers">
+          <span class="meal-icon">🍽️</span>
+          <span class="meal-label">Dinner</span>
+          <span class="meal-name">Lunch leftovers <span class="leftover-tag">reheat</span></span>
+        </div>
+        
+      
+        <div class="booster">
+          💪 Additional high-protein option: <strong>Mixed Sprouts Salad with Lemon</strong>
+        </div>
+        
+      <div class="fruit">🍎 Musk Melon</div>
+    </div>
+    
+
+    <h2>🛒 Grocery list</h2>
+    
+    <div class="grocery-section">
+      <h3>🥫 Sunday — Pantry & dry goods</h3>
+      <ul><li><span class="item">Rice (raw, sona masuri)</span><span class="qty">3 kg</span></li>
+<li><span class="item">Toor dal</span><span class="qty">750 g</span></li>
+<li><span class="item">Wheat flour</span><span class="qty">1 kg</span></li>
+<li><span class="item">Basmati rice</span><span class="qty">1 kg</span></li>
+<li><span class="item">Wheat Pav</span><span class="qty">1 pack (6 pavs)</span></li>
+<li><span class="item">Pavbaji Masala</span><span class="qty">1 packet</span></li>
+<li><span class="item">Rasam Powder</span><span class="qty">1 packet</span></li>
+<li><span class="item">Sooji (Rava)</span><span class="qty">500 g</span></li>
+<li><span class="item">MTR Rava Idli mix</span><span class="qty">1 packet</span></li>
+<li><span class="item">Peanuts</span><span class="qty">200 g</span></li>
+<li><span class="item">Dosa batter</span><span class="qty">1 kg</span></li>
+<li><span class="item">Neer Dosa Batter</span><span class="qty">1 kg</span></li>
+<li><span class="item">Idli rice</span><span class="qty">500 g</span></li>
+<li><span class="item">Urad dal</span><span class="qty">250 g</span></li>
+<li><span class="item">Horsegram</span><span class="qty">250 g</span></li>
+<li><span class="item">Black channa</span><span class="qty">250 g</span></li>
+<li><span class="item">Moong sprouts</span><span class="qty">250 g</span></li>
+<li><span class="item">Channa sprouts</span><span class="qty">250 g</span></li>
+<li><span class="item">White channa</span><span class="qty">250 g</span></li>
+<li><span class="item">Bisi bele masala</span><span class="qty">1 packet</span></li>
+<li><span class="item">Ghee</span><span class="qty">500 g</span></li>
+<li><span class="item">Olive oil</span><span class="qty">1 litre</span></li>
+<li><span class="item">Lemon</span><span class="qty">4-5 nos</span></li>
+<li><span class="item">Spices (general)</span><span class="qty">As needed</span></li>
+<li><span class="item">Oregano</span><span class="qty">1 small jar</span></li>
+<li><span class="item">Garlic</span><span class="qty">100 g</span></li></ul>
+    </div>
+    
+    <div class="grocery-section">
+      <h3>🥦 Wednesday — Fresh veg & herbs</h3>
+      <ul><li><span class="item">Onion</span><span class="qty">1.5 kg</span></li>
+<li><span class="item">Tomato</span><span class="qty">1 kg</span></li>
+<li><span class="item">Potato</span><span class="qty">1 kg</span></li>
+<li><span class="item">Carrot</span><span class="qty">500 g</span></li>
+<li><span class="item">Beans</span><span class="qty">500 g</span></li>
+<li><span class="item">Peas</span><span class="qty">500 g</span></li>
+<li><span class="item">Capsicum</span><span class="qty">500 g</span></li>
+<li><span class="item">Bell Pepper</span><span class="qty">500 g</span></li>
+<li><span class="item">Zucchini</span><span class="qty">500 g</span></li>
+<li><span class="item">Broccoli</span><span class="qty">500 g</span></li>
+<li><span class="item">Mixed veg (for Pulav/BBB)</span><span class="qty">1 kg</span></li>
+<li><span class="item">Palak</span><span class="qty">2 bunches</span></li>
+<li><span class="item">Cabbage</span><span class="qty">1 medium head</span></li>
+<li><span class="item">Amaranthus leaves</span><span class="qty">2 bunches</span></li>
+<li><span class="item">Thondekayi</span><span class="qty">500 g</span></li>
+<li><span class="item">Lettuce</span><span class="qty">1 head</span></li>
+<li><span class="item">Cucumber</span><span class="qty">500 g</span></li>
+<li><span class="item">Drumstick</span><span class="qty">2-3 nos</span></li>
+<li><span class="item">Methi leaves</span><span class="qty">1 bunch</span></li>
+<li><span class="item">Corriander</span><span class="qty">3 bunches</span></li>
+<li><span class="item">Curry leaves</span><span class="qty">2 bunches</span></li>
+<li><span class="item">Mint</span><span class="qty">1 bunch</span></li></ul>
+    </div>
+    
+    <div class="grocery-section">
+      <h3>🍗 Friday — Meat, eggs, paneer</h3>
+      <ul><li><span class="item">Chicken (boneless)</span><span class="qty">1 kg</span></li>
+<li><span class="item">Eggs</span><span class="qty">2 dozen</span></li>
+<li><span class="item">Paneer (fresh)</span><span class="qty">1 kg</span></li>
+<li><span class="item">Curd (fresh)</span><span class="qty">1 kg</span></li>
+<li><span class="item">Coconut (fresh)</span><span class="qty">1 nos</span></li></ul>
+    </div>
+    <div class="notes">📝 Ensure adequate supply of Paneer as it's used in multiple dishes. Garlic and Ginger are assumed to be staples but listed for clarity in preparation. The cook prepares meals daily, so consider the shelf life of fresh items when planning shopping days.</div>
+  </div>
+  <footer>Generated 22 Jul 2026, 01:12 PM · menu-agent</footer>
+</body>
+</html>

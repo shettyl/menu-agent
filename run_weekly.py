@@ -53,9 +53,10 @@ def main():
         else:
             print(f"ℹ️  Existing plan is for {week_starting} — {days_from_today} days in future. Regenerating.")
 
-    run_step("Step 1/3 — Generating 7-day menu plan", "python plan_week.py")
-    run_step("Step 2/3 — Building grocery list", "python make_grocery_list.py")
-    run_step("Step 3/3 — Sending to Telegram", "python send_to_telegram.py")
+    run_step("Step 1/4 — Generating 7-day menu plan", "python plan_week.py")
+    run_step("Step 2/4 — Building grocery list", "python make_grocery_list.py")
+    run_step("Step 3/4 — Rendering dashboard", "python render_dashboard.py")
+    run_step("Step 4/4 — Sending to Telegram", "python send_to_telegram.py")
 
     print("\n" + "=" * 60)
     print("🎉 PIPELINE COMPLETE — check your Telegram group!")

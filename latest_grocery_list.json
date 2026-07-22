@@ -5,24 +5,13 @@
       "item": "Rice (raw, sona masuri)",
       "quantity": "3 kg",
       "for_dishes": [
+        "D021",
         "D020",
         "D022",
+        "D016",
         "D026",
         "D017",
-        "D008",
-        "D009",
-        "D027",
-        "D016",
-        "D031"
-      ]
-    },
-    {
-      "item": "Wheat flour",
-      "quantity": "2 kg",
-      "for_dishes": [
-        "D007",
-        "D011",
-        "D009"
+        "D019"
       ]
     },
     {
@@ -30,17 +19,46 @@
       "quantity": "750 g",
       "for_dishes": [
         "D020",
+        "D016",
         "D026",
-        "D019",
-        "D017",
-        "D016"
+        "D019"
       ]
     },
     {
-      "item": "MTR Rava Idli mix",
-      "quantity": "1 box",
+      "item": "Wheat flour",
+      "quantity": "1 kg",
       "for_dishes": [
-        "D012"
+        "D009",
+        "D011",
+        "D007"
+      ]
+    },
+    {
+      "item": "Basmati rice",
+      "quantity": "1 kg",
+      "for_dishes": [
+        "D022"
+      ]
+    },
+    {
+      "item": "Wheat Pav",
+      "quantity": "1 pack (6 pavs)",
+      "for_dishes": [
+        "D009"
+      ]
+    },
+    {
+      "item": "Pavbaji Masala",
+      "quantity": "1 packet",
+      "for_dishes": [
+        "D009"
+      ]
+    },
+    {
+      "item": "Rasam Powder",
+      "quantity": "1 packet",
+      "for_dishes": [
+        "D021"
       ]
     },
     {
@@ -51,91 +69,24 @@
       ]
     },
     {
-      "item": "Peanuts",
-      "quantity": "300 g",
-      "for_dishes": [
-        "D012",
-        "D027"
-      ]
-    },
-    {
-      "item": "Lemon",
-      "quantity": "5-6",
-      "for_dishes": [
-        "D034",
-        "D027"
-      ]
-    },
-    {
-      "item": "Spices (general)",
-      "quantity": "As needed",
-      "for_dishes": [
-        "D034",
-        "D030",
-        "D022",
-        "D026",
-        "D010",
-        "D001",
-        "D019",
-        "D029",
-        "D017",
-        "D008",
-        "D009",
-        "D027",
-        "D016",
-        "D031"
-      ]
-    },
-    {
-      "item": "Ghee",
-      "quantity": "500 g",
-      "for_dishes": [
-        "D022",
-        "D026"
-      ]
-    },
-    {
-      "item": "Bisi Bele Bath Masala",
+      "item": "MTR Rava Idli mix",
       "quantity": "1 packet",
       "for_dishes": [
-        "D026"
+        "D012"
       ]
     },
     {
-      "item": "Wheat Pasta",
-      "quantity": "500 g",
+      "item": "Peanuts",
+      "quantity": "200 g",
       "for_dishes": [
-        "D010"
+        "D012"
       ]
     },
     {
-      "item": "Idli Rice",
+      "item": "Dosa batter",
       "quantity": "1 kg",
       "for_dishes": [
-        "D001"
-      ]
-    },
-    {
-      "item": "Urad Dal",
-      "quantity": "500 g",
-      "for_dishes": [
-        "D001"
-      ]
-    },
-    {
-      "item": "Sambar powder (generic)",
-      "quantity": "1 packet",
-      "for_dishes": [
-        "D001",
-        "D017",
-        "D016"
-      ]
-    },
-    {
-      "item": "Horsegram",
-      "quantity": "500 g",
-      "for_dishes": [
-        "D017"
+        "D003"
       ]
     },
     {
@@ -146,235 +97,31 @@
       ]
     },
     {
-      "item": "Pav Bhaji Masala",
-      "quantity": "1 packet",
-      "for_dishes": [
-        "D009"
-      ]
-    },
-    {
-      "item": "White Channa (dried)",
+      "item": "Idli rice",
       "quantity": "500 g",
-      "for_dishes": [
-        "D031"
-      ]
-    }
-  ],
-  "wednesday_fresh_veg": [
-    {
-      "item": "Onion",
-      "quantity": "2 kg",
-      "for_dishes": [
-        "D007",
-        "D020",
-        "D034",
-        "D019",
-        "D009"
-      ]
-    },
-    {
-      "item": "Tomato",
-      "quantity": "1.5 kg",
-      "for_dishes": [
-        "D020",
-        "D034",
-        "D030",
-        "D001",
-        "D009",
-        "D031"
-      ]
-    },
-    {
-      "item": "Paneer",
-      "quantity": "1 kg",
-      "for_dishes": [
-        "D007",
-        "D030",
-        "D019",
-        "D029",
-        "D009",
-        "D031"
-      ]
-    },
-    {
-      "item": "Corriander",
-      "quantity": "3 bunches",
-      "for_dishes": [
-        "D007",
-        "D012",
-        "D020",
-        "D034",
-        "D011",
-        "D019",
-        "D029",
-        "D017",
-        "D009",
-        "D027"
-      ]
-    },
-    {
-      "item": "Curry leaves",
-      "quantity": "2 small bunches",
-      "for_dishes": [
-        "D007",
-        "D001",
-        "D017",
-        "D027",
-        "D016"
-      ]
-    },
-    {
-      "item": "Carrot",
-      "quantity": "750 g",
-      "for_dishes": [
-        "D022",
-        "D026",
-        "D010",
-        "D009"
-      ]
-    },
-    {
-      "item": "Beans",
-      "quantity": "500 g",
-      "for_dishes": [
-        "D022",
-        "D026",
-        "D009"
-      ]
-    },
-    {
-      "item": "Peas (fresh or frozen)",
-      "quantity": "500 g",
-      "for_dishes": [
-        "D022",
-        "D026",
-        "D009"
-      ]
-    },
-    {
-      "item": "Mint",
-      "quantity": "1 bunch",
-      "for_dishes": [
-        "D022",
-        "D031"
-      ]
-    },
-    {
-      "item": "Bell pepper",
-      "quantity": "4-5",
-      "for_dishes": [
-        "D030",
-        "D010",
-        "D029",
-        "D031"
-      ]
-    },
-    {
-      "item": "Zucchini",
-      "quantity": "2 medium",
-      "for_dishes": [
-        "D030",
-        "D029"
-      ]
-    },
-    {
-      "item": "Lettuce",
-      "quantity": "1 head",
-      "for_dishes": [
-        "D030"
-      ]
-    },
-    {
-      "item": "Broccoli",
-      "quantity": "1 head",
-      "for_dishes": [
-        "D010",
-        "D029"
-      ]
-    },
-    {
-      "item": "Mushroom",
-      "quantity": "250 g",
-      "for_dishes": [
-        "D010"
-      ]
-    },
-    {
-      "item": "Drumstick",
-      "quantity": "4-5",
       "for_dishes": [
         "D001"
       ]
     },
     {
-      "item": "Capsicum",
-      "quantity": "3-4",
+      "item": "Urad dal",
+      "quantity": "250 g",
       "for_dishes": [
-        "D019",
-        "D009"
+        "D001"
       ]
     },
     {
-      "item": "Amaranthus leaves",
-      "quantity": "2 bunches",
+      "item": "Horsegram",
+      "quantity": "250 g",
       "for_dishes": [
         "D017"
       ]
     },
     {
-      "item": "Palak (Spinach)",
-      "quantity": "2 bunches",
+      "item": "Black channa",
+      "quantity": "250 g",
       "for_dishes": [
-        "D016"
-      ]
-    },
-    {
-      "item": "Cabbage",
-      "quantity": "1 small head",
-      "for_dishes": [
-        "D016"
-      ]
-    },
-    {
-      "item": "Cucumber",
-      "quantity": "1 large",
-      "for_dishes": [
-        "D031"
-      ]
-    },
-    {
-      "item": "Garlic",
-      "quantity": "1 bulb",
-      "for_dishes": [
-        "D031"
-      ]
-    }
-  ],
-  "friday_perishables": [
-    {
-      "item": "Eggs",
-      "quantity": "2 dozen",
-      "for_dishes": [
-        "D020",
-        "D008",
-        "D027"
-      ]
-    },
-    {
-      "item": "Chicken (boneless)",
-      "quantity": "1 kg",
-      "for_dishes": [
-        "D032"
-      ]
-    },
-    {
-      "item": "Curd (fresh)",
-      "quantity": "1 kg",
-      "for_dishes": [
-        "D007",
-        "D011",
-        "D022",
-        "D031"
+        "D021"
       ]
     },
     {
@@ -390,7 +137,324 @@
       "for_dishes": [
         "D034"
       ]
+    },
+    {
+      "item": "White channa",
+      "quantity": "250 g",
+      "for_dishes": [
+        "D031"
+      ]
+    },
+    {
+      "item": "Bisi bele masala",
+      "quantity": "1 packet",
+      "for_dishes": [
+        "D026"
+      ]
+    },
+    {
+      "item": "Ghee",
+      "quantity": "500 g",
+      "for_dishes": [
+        "D022",
+        "D026"
+      ]
+    },
+    {
+      "item": "Olive oil",
+      "quantity": "1 litre",
+      "for_dishes": [
+        "D029",
+        "D030",
+        "D033"
+      ]
+    },
+    {
+      "item": "Lemon",
+      "quantity": "4-5 nos",
+      "for_dishes": [
+        "D033",
+        "D034"
+      ]
+    },
+    {
+      "item": "Spices (general)",
+      "quantity": "As needed",
+      "for_dishes": [
+        "D009",
+        "D011",
+        "D020",
+        "D021",
+        "D022",
+        "D026",
+        "D029",
+        "D030",
+        "D031",
+        "D033",
+        "D034"
+      ]
+    },
+    {
+      "item": "Oregano",
+      "quantity": "1 small jar",
+      "for_dishes": [
+        "D031"
+      ]
+    },
+    {
+      "item": "Garlic",
+      "quantity": "100 g",
+      "for_dishes": [
+        "D003",
+        "D031"
+      ]
     }
   ],
-  "notes": "Purchase Methi leaves for Thepla (D011) on Sunday. Since D011 is used only once, adjust Methi quantity accordingly if only a small amount is needed."
+  "wednesday_fresh_veg": [
+    {
+      "item": "Onion",
+      "quantity": "1.5 kg",
+      "for_dishes": [
+        "D009",
+        "D020",
+        "D034",
+        "D007",
+        "D003",
+        "D019"
+      ]
+    },
+    {
+      "item": "Tomato",
+      "quantity": "1 kg",
+      "for_dishes": [
+        "D009",
+        "D020",
+        "D033",
+        "D034",
+        "D030",
+        "D031",
+        "D001"
+      ]
+    },
+    {
+      "item": "Potato",
+      "quantity": "1 kg",
+      "for_dishes": [
+        "D009",
+        "D003"
+      ]
+    },
+    {
+      "item": "Carrot",
+      "quantity": "500 g",
+      "for_dishes": [
+        "D009",
+        "D022",
+        "D026"
+      ]
+    },
+    {
+      "item": "Beans",
+      "quantity": "500 g",
+      "for_dishes": [
+        "D009",
+        "D022",
+        "D026"
+      ]
+    },
+    {
+      "item": "Peas",
+      "quantity": "500 g",
+      "for_dishes": [
+        "D009",
+        "D022",
+        "D026"
+      ]
+    },
+    {
+      "item": "Capsicum",
+      "quantity": "500 g",
+      "for_dishes": [
+        "D009",
+        "D019",
+        "D029",
+        "D030",
+        "D031"
+      ]
+    },
+    {
+      "item": "Bell Pepper",
+      "quantity": "500 g",
+      "for_dishes": [
+        "D029",
+        "D030",
+        "D031"
+      ]
+    },
+    {
+      "item": "Zucchini",
+      "quantity": "500 g",
+      "for_dishes": [
+        "D029",
+        "D030"
+      ]
+    },
+    {
+      "item": "Broccoli",
+      "quantity": "500 g",
+      "for_dishes": [
+        "D029"
+      ]
+    },
+    {
+      "item": "Mixed veg (for Pulav/BBB)",
+      "quantity": "1 kg",
+      "for_dishes": [
+        "D022",
+        "D026",
+        "D030"
+      ]
+    },
+    {
+      "item": "Palak",
+      "quantity": "2 bunches",
+      "for_dishes": [
+        "D016"
+      ]
+    },
+    {
+      "item": "Cabbage",
+      "quantity": "1 medium head",
+      "for_dishes": [
+        "D016"
+      ]
+    },
+    {
+      "item": "Amaranthus leaves",
+      "quantity": "2 bunches",
+      "for_dishes": [
+        "D017"
+      ]
+    },
+    {
+      "item": "Thondekayi",
+      "quantity": "500 g",
+      "for_dishes": [
+        "D021"
+      ]
+    },
+    {
+      "item": "Lettuce",
+      "quantity": "1 head",
+      "for_dishes": [
+        "D033",
+        "D030"
+      ]
+    },
+    {
+      "item": "Cucumber",
+      "quantity": "500 g",
+      "for_dishes": [
+        "D033",
+        "D031"
+      ]
+    },
+    {
+      "item": "Drumstick",
+      "quantity": "2-3 nos",
+      "for_dishes": [
+        "D001"
+      ]
+    },
+    {
+      "item": "Methi leaves",
+      "quantity": "1 bunch",
+      "for_dishes": [
+        "D011"
+      ]
+    },
+    {
+      "item": "Corriander",
+      "quantity": "3 bunches",
+      "for_dishes": [
+        "D009",
+        "D021",
+        "D020",
+        "D011",
+        "D029",
+        "D034",
+        "D007",
+        "D019",
+        "D026"
+      ]
+    },
+    {
+      "item": "Curry leaves",
+      "quantity": "2 bunches",
+      "for_dishes": [
+        "D021",
+        "D016",
+        "D007",
+        "D003",
+        "D001",
+        "D017"
+      ]
+    },
+    {
+      "item": "Mint",
+      "quantity": "1 bunch",
+      "for_dishes": [
+        "D022",
+        "D031"
+      ]
+    }
+  ],
+  "friday_perishables": [
+    {
+      "item": "Chicken (boneless)",
+      "quantity": "1 kg",
+      "for_dishes": [
+        "D032"
+      ]
+    },
+    {
+      "item": "Eggs",
+      "quantity": "2 dozen",
+      "for_dishes": [
+        "D020",
+        "D033",
+        "D008"
+      ]
+    },
+    {
+      "item": "Paneer (fresh)",
+      "quantity": "1 kg",
+      "for_dishes": [
+        "D009",
+        "D029",
+        "D007",
+        "D019",
+        "D030",
+        "D031"
+      ]
+    },
+    {
+      "item": "Curd (fresh)",
+      "quantity": "1 kg",
+      "for_dishes": [
+        "D011",
+        "D022",
+        "D007",
+        "D031"
+      ]
+    },
+    {
+      "item": "Coconut (fresh)",
+      "quantity": "1 nos",
+      "for_dishes": [
+        "D003"
+      ]
+    }
+  ],
+  "notes": "Ensure adequate supply of Paneer as it's used in multiple dishes. Garlic and Ginger are assumed to be staples but listed for clarity in preparation. The cook prepares meals daily, so consider the shelf life of fresh items when planning shopping days."
 }
