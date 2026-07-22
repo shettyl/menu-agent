@@ -1,19 +1,15 @@
 """
-Day 7: Poll Telegram for messages, understand them with Gemini, apply edits.
-
-Handles messages from Lokesh and Anitha only. Uses:
-- last_update_id in state.json to avoid re-processing
-- Gemini to classify (is this a menu edit?) and parse (extract structured action)
-- Confidence check on dish matching — asks for confirmation when vague
-- latest_week_plan.json as the source of truth for the current menu
+Day 7 + Day 8: Poll Telegram for messages, understand them with Gemini, apply edits.
+Also handles feedback ratings — writes to Google Sheets 'feedback' tab.
 """
 
 import os
+import re
 import json
 import time
 import urllib.request
 import urllib.parse
-from datetime import datetime
+from datetime import datetime, date
 from dotenv import load_dotenv
 from google import genai
 from google.genai.errors import ServerError, ClientError
@@ -28,13 +24,27 @@ GEMINI_KEY = os.getenv("GEMINI_API_KEY")
 
 STATE_FILE = "state.json"
 PLAN_FILE  = "latest_week_plan.json"
-MODEL_NAME = "gemini-2.5-flash-lite"  # cheap + fast for classification/parsing
+MODEL_NAME = "gemini-2.5-flash-lite"
 
 ALLOWED_USERS = {LOKESH_ID, ANITHA_ID}
 
+MENU_KEYWORDS = {
+    "change", "swap", "replace", "instead",
+    "breakfast", "lunch", "dinner", "meal",
+    "monday", "tuesday", "wednesday", "thursday",
+    "friday", "saturday", "sunday",
+    "mon", "tue", "wed", "thu", "fri", "sat", "sun",
+    "ok", "okay", "confirm", "approved", "sounds good", "looks good",
+    "👍", "✅", "🙌",
+    "menu", "week", "cook", "dish", "plan", "grocery",
+    "rating", "rate", "skip",
+}
+
+RATING_RE = re.compile(r"\b([1-5])\D+([1-5])\D+([1-5])\b")
+
 
 # =========================================================
-# State helpers — track last processed Telegram update
+# State helpers
 # =========================================================
 
 def load_state():
@@ -54,7 +64,6 @@ def save_state(state):
 # =========================================================
 
 def fetch_updates(offset):
-    """Fetch messages since offset. Returns list of update dicts."""
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/getUpdates?offset={offset}&timeout=10"
     with urllib.request.urlopen(url) as resp:
         data = json.loads(resp.read())
@@ -64,7 +73,6 @@ def fetch_updates(offset):
 
 
 def send_reply(text):
-    """Send a message to the family chat."""
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     data = urllib.parse.urlencode({
         "chat_id": CHAT_ID,
@@ -96,7 +104,6 @@ def save_plan(plan):
 
 
 def find_day(plan, day_of_week):
-    """Find the day dict in the plan matching a day-of-week name."""
     day_of_week = day_of_week.strip().lower()
     for day in plan["days"]:
         if day["day_of_week"].lower() == day_of_week:
@@ -129,14 +136,15 @@ def call_gemini(client, prompt):
 
 
 # =========================================================
-# Message understanding — classify + parse
+# Pre-filter and intent classifier
 # =========================================================
 
+def looks_menu_related(text):
+    lowered = text.lower()
+    return any(kw in lowered for kw in MENU_KEYWORDS)
+
+
 def parse_message(client, message_text, current_plan_summary):
-    """
-    Ask Gemini to classify + parse the message.
-    Returns dict with intent + parsed fields, or intent = 'ignore' / 'unclear'.
-    """
     prompt = f"""You are parsing a family member's Telegram reply about their weekly menu.
 The current menu plan is shown below. The user may want to change a dish, confirm the plan,
 or say something unrelated.
@@ -180,7 +188,6 @@ Now parse this message. Output ONLY the JSON:
 
 
 def summarize_plan(plan):
-    """Compact plan summary for including in the parser prompt."""
     lines = [f"Week of {plan['week_starting']}:"]
     for day in plan["days"]:
         lines.append(
@@ -193,11 +200,10 @@ def summarize_plan(plan):
 
 
 # =========================================================
-# Dish matching — with confidence check
+# Dish matching with confidence
 # =========================================================
 
 def find_dish_by_id_literal(dishes, hint):
-    """If user gave an explicit dish_id like 'D024', match it directly."""
     hint = hint.strip().upper()
     if hint.startswith("D") and hint[1:].isdigit():
         for d in dishes:
@@ -207,14 +213,6 @@ def find_dish_by_id_literal(dishes, hint):
 
 
 def find_dish_id_by_name(client, dishes, name_hint):
-    """
-    Find the best matching dish_id + confidence.
-    Returns (dish_id, confidence, alternates):
-    - confidence == "high": name closely matches the dish (apply immediately)
-    - confidence == "low" : match is vague — agent should confirm before applying
-    - confidence == "none": no reasonable match
-    """
-    # Fast path — explicit dish_id
     explicit = find_dish_by_id_literal(dishes, name_hint)
     if explicit:
         return explicit, "high", []
@@ -230,9 +228,7 @@ User asked for: "{name_hint}"
 
 Guidelines:
 - "high" confidence: user's words clearly identify this exact dish
-  (e.g. "paneer paratha" -> D007 Paneer Paratha = high)
-- "low" confidence: user's words are vague or match multiple dishes, and you had
-  to guess (e.g. "dal" alone could mean any dal-containing dish)
+- "low" confidence: user's words are vague or match multiple dishes
 - "none": no dish reasonably matches
 
 Return STRICT JSON. Examples:
@@ -258,7 +254,7 @@ Output ONLY the JSON:
 
 
 # =========================================================
-# Apply edits to plan
+# Apply edits
 # =========================================================
 
 def apply_change_dish(client, plan, dishes, parsed):
@@ -280,7 +276,6 @@ def apply_change_dish(client, plan, dishes, parsed):
         )
 
     if confidence == "low":
-        # Ask for confirmation instead of silently applying
         primary = next((d for d in dishes if d["dish_id"] == new_dish_id), None)
         msg = (
             f"🤔 '{parsed['new_dish']}' is a bit vague — closest match I found is:\n"
@@ -300,7 +295,6 @@ def apply_change_dish(client, plan, dishes, parsed):
         )
         return msg
 
-    # confidence == "high" → apply
     new_dish = next((d for d in dishes if d["dish_id"] == new_dish_id), None)
     if not new_dish:
         return f"❌ Dish '{new_dish_id}' not in catalog. Nothing changed."
@@ -337,48 +331,87 @@ def apply_swap(plan, parsed):
 
 
 # =========================================================
-# Main handler
+# Day 8: Ratings
 # =========================================================
-# Words strongly suggesting a menu-related message
-MENU_KEYWORDS = {
-    "change", "swap", "replace", "instead",
-    "breakfast", "lunch", "dinner", "meal",
-    "monday", "tuesday", "wednesday", "thursday",
-    "friday", "saturday", "sunday",
-    "mon", "tue", "wed", "thu", "fri", "sat", "sun",
-    "ok", "okay", "confirm", "approved", "sounds good", "looks good",
-    "👍", "✅", "🙌",
-    # Common menu-adjacent words worth handling
-    "menu", "week", "cook", "dish", "plan", "grocery",
-}
 
-def looks_menu_related(text):
+def try_parse_rating(text):
     """
-    Fast pre-check to skip obvious chit-chat before calling Gemini.
-    Returns True if any menu keyword is present.
+    Try to extract 3 ratings from a message.
+    Returns (bf, lunch, dinner) as ints, or 'skip', or None.
     """
-    lowered = text.lower()
-    return any(kw in lowered for kw in MENU_KEYWORDS)
+    lowered = text.strip().lower()
+    if lowered in ("skip", "no", "pass"):
+        return "skip"
+    m = RATING_RE.search(lowered)
+    if m:
+        return tuple(int(m.group(i)) for i in (1, 2, 3))
+    return None
+
+
+def save_rating_to_sheet(plan, ratings):
+    """Persist today's ratings to Google Sheets 'feedback' tab."""
+    from load_data import get_sheet
+    sheet = get_sheet()
+    ws = sheet.worksheet("feedback")
+
+    today = date.today().isoformat()
+    day = None
+    for d in plan["days"]:
+        if d.get("date") == today:
+            day = d
+            break
+
+    if not day:
+        print(f"   No plan entry for today ({today}); rating skipped.")
+        return
+
+    slots = [("breakfast", ratings[0]), ("lunch", ratings[1]), ("dinner", ratings[2])]
+    for meal_slot, rating in slots:
+        dish_id = day[meal_slot].get("dish_id", "")
+        if not dish_id:
+            continue
+        row = [today, meal_slot, dish_id, int(rating), ""]
+        ws.append_row(row, value_input_option="USER_ENTERED")
+        print(f"   Wrote rating: {meal_slot} = {rating} for {dish_id}")
+
+
+# =========================================================
+# Main message handler
+# =========================================================
+
 def handle_message(client, plan, dishes, message):
     user_id = message.get("from", {}).get("id")
     if user_id not in ALLOWED_USERS:
-        return None  # silently ignore outsiders
+        return None
 
     text = message.get("text", "").strip()
     if not text:
         return None
 
-    # Ignore bot's own messages (defensive — shouldn't happen but just in case)
     if message.get("from", {}).get("is_bot"):
         return None
 
     print(f"📨 Message from {user_id}: {text[:80]}")
 
-    # Fast pre-filter: skip obvious chit-chat without calling Gemini
     if not looks_menu_related(text):
         print(f"   Skipped (no menu keywords)")
         return None
 
+    # Rating check
+    rating = try_parse_rating(text)
+    if rating == "skip":
+        print("   User skipped feedback")
+        return "👍 No feedback today, noted."
+    if isinstance(rating, tuple):
+        print(f"   Detected rating: {rating}")
+        try:
+            save_rating_to_sheet(plan, rating)
+            return f"✅ Thanks! Ratings saved: BF={rating[0]}, Lunch={rating[1]}, Dinner={rating[2]}"
+        except Exception as e:
+            print(f"   Failed to save rating: {e}")
+            return f"⚠️ Got your rating but couldn't save it: {e}"
+
+    # Otherwise, treat as menu edit intent
     summary = summarize_plan(plan)
     try:
         parsed = parse_message(client, text, summary)
@@ -419,7 +452,6 @@ def main():
         print("No plan file yet — nothing to edit against.")
         return
 
-    # Load dish catalog fresh from sheet
     from load_data import get_sheet, load_tab
     print("Loading dish catalog from sheet...")
     dishes = load_tab(get_sheet(), "dishes")
