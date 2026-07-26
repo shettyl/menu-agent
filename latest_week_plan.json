@@ -75,10 +75,10 @@
       "day_of_week": "Thursday",
       "is_training_day": true,
       "breakfast": {
-        "dish_id": "D009",
-        "dish_name": "Pav Baji with Paneer",
-        "supplement": "none",
-        "reasoning": "High protein (paneer), complexity 1 for weekday."
+        "dish_id": "D011",
+        "dish_name": "Thepla with Curd",
+        "supplement": "boiled eggs",
+        "reasoning": "Complexity 1, Father likes this. Supplemented with boiled eggs to boost protein (R002)."
       },
       "lunch": {
         "dish_id": "D016",
@@ -98,10 +98,10 @@
       "day_of_week": "Friday",
       "is_training_day": false,
       "breakfast": {
-        "dish_id": "D011",
-        "dish_name": "Thepla with Curd",
-        "supplement": "boiled eggs",
-        "reasoning": "Complexity 1, Father likes this. Supplemented with boiled eggs to boost protein (R002)."
+        "dish_id": "D009",
+        "dish_name": "Pav Baji with Paneer",
+        "supplement": "none",
+        "reasoning": "High protein (paneer), complexity 1 for weekday."
       },
       "lunch": {
         "dish_id": "D021",
