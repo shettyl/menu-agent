@@ -443,6 +443,29 @@ def pretty_print_week(plan):
 
 
 def main():
+    # ---- Immutability check ----
+    # If a plan already exists for the target week, refuse to overwrite it.
+    # This protects any edits Anitha/Lokesh have applied via the poller.
+    # Pass --force to override (only for testing).
+    force = "--force" in sys.argv
+    target_week = WEEK_START.isoformat()
+    plan_path = "latest_week_plan.json"
+
+    if not force and os.path.exists(plan_path):
+        try:
+            with open(plan_path, "r", encoding="utf-8") as f:
+                existing = json.load(f)
+            existing_week = existing.get("week_starting", "")
+            if existing_week == target_week:
+                print(f"⚠️  Plan for week {target_week} already exists.")
+                print(f"   Refusing to regenerate to protect any edits.")
+                print(f"   Run 'python plan_week.py --force' to overwrite anyway.")
+                return
+            else:
+                print(f"ℹ️  Existing plan is for week {existing_week}; generating fresh plan for {target_week}.")
+        except (json.JSONDecodeError, KeyError):
+            print(f"ℹ️  Existing plan file is unreadable; regenerating.")
+
     print(f"📋 Planning week starting {WEEK_START.isoformat()} ({WEEK_START.strftime('%A')})\n")
 
     print("Loading data from Google Sheets...")
@@ -498,7 +521,6 @@ def main():
     with open("latest_week_plan.json", "w", encoding="utf-8") as f:
         json.dump(plan, f, indent=2)
     print(f"\n💾 Full plan saved to latest_week_plan.json")
-
 
 if __name__ == "__main__":
     main()

@@ -1,15 +1,22 @@
 """
-Day 7 + Day 8: Poll Telegram for messages, understand them with Gemini, apply edits.
-Also handles feedback ratings — writes to Google Sheets 'feedback' tab.
+Day 7-10 + Day 11: Poll Telegram for messages, understand them with Gemini, apply edits.
+Also handles feedback ratings and quiet resend of updated menu + dashboard.
+
+Day 11 additions:
+- Explicit dates in edit confirmations ("Thursday, Jul 30")
+- Quiet auto-resend: after any edit, wait until 15 min of silence, then send updated menu + dashboard
+- Explicit "show menu" / "resend" / "latest" trigger for immediate resend
 """
 
 import os
 import re
+import sys
 import json
 import time
+import subprocess
 import urllib.request
 import urllib.parse
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from dotenv import load_dotenv
 from google import genai
 from google.genai.errors import ServerError, ClientError
@@ -22,9 +29,11 @@ LOKESH_ID  = int(os.getenv("LOKESH_USER_ID", "0"))
 ANITHA_ID  = int(os.getenv("ANITHA_USER_ID", "0"))
 GEMINI_KEY = os.getenv("GEMINI_API_KEY")
 
-STATE_FILE = "state.json"
-PLAN_FILE  = "latest_week_plan.json"
-MODEL_NAME = "gemini-2.5-flash-lite"
+STATE_FILE     = "state.json"
+PLAN_FILE      = "latest_week_plan.json"
+DASHBOARD_FILE = "dashboard.html"
+MODEL_NAME     = "gemini-2.5-flash-lite"
+QUIET_RESEND_MINUTES = 15  # wait this long after last edit before auto-resend
 
 ALLOWED_USERS = {LOKESH_ID, ANITHA_ID}
 
@@ -38,9 +47,11 @@ MENU_KEYWORDS = {
     "👍", "✅", "🙌",
     "menu", "week", "cook", "dish", "plan", "grocery",
     "rating", "rate", "skip",
+    "show", "latest", "resend", "current",
 }
 
 RATING_RE = re.compile(r"\b([1-5])\D+([1-5])\D+([1-5])\b")
+RESEND_KEYWORDS = {"show menu", "resend", "latest menu", "current menu", "show current menu"}
 
 
 # =========================================================
@@ -49,9 +60,13 @@ RATING_RE = re.compile(r"\b([1-5])\D+([1-5])\D+([1-5])\b")
 
 def load_state():
     if not os.path.exists(STATE_FILE):
-        return {"last_update_id": 0}
+        return {"last_update_id": 0, "last_edit_at": None, "pending_resend": False}
     with open(STATE_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+        state = json.load(f)
+    # Ensure new fields exist for older state files
+    state.setdefault("last_edit_at", None)
+    state.setdefault("pending_resend", False)
+    return state
 
 
 def save_state(state):
@@ -111,6 +126,24 @@ def find_day(plan, day_of_week):
     return None
 
 
+def format_day_label(day_dict):
+    """
+    Return a display label like 'Thursday (Jul 30)' from a day dict.
+    Portable across OS (avoids %-d which is Linux-only).
+    """
+    day_name = day_dict.get("day_of_week", "?")
+    date_str = day_dict.get("date", "")
+    if not date_str:
+        return day_name
+    try:
+        d = date.fromisoformat(date_str)
+        month_abbr = d.strftime("%b")  # e.g. 'Jul'
+        day_num = str(d.day)           # '30' (no leading zero)
+        return f"{day_name} ({month_abbr} {day_num})"
+    except (ValueError, TypeError):
+        return day_name
+
+
 # =========================================================
 # Gemini call with retry
 # =========================================================
@@ -136,7 +169,7 @@ def call_gemini(client, prompt):
 
 
 # =========================================================
-# Pre-filter and intent classifier
+# Pre-filter, intent, dish matching
 # =========================================================
 
 def looks_menu_related(text):
@@ -144,10 +177,14 @@ def looks_menu_related(text):
     return any(kw in lowered for kw in MENU_KEYWORDS)
 
 
+def is_resend_request(text):
+    lowered = text.lower().strip()
+    return any(kw in lowered for kw in RESEND_KEYWORDS)
+
+
 def parse_message(client, message_text, current_plan_summary):
     prompt = f"""You are parsing a family member's Telegram reply about their weekly menu.
-The current menu plan is shown below. The user may want to change a dish, confirm the plan,
-or say something unrelated.
+The current menu plan is shown below.
 
 CURRENT MENU PLAN (summarized):
 {current_plan_summary}
@@ -156,29 +193,23 @@ USER MESSAGE:
 "{message_text}"
 
 Classify the message intent as ONE of:
-- "confirm"       : user is accepting the plan as-is (e.g. "ok", "looks good", "confirm", "👍", "thanks")
+- "confirm"       : user is accepting the plan as-is
 - "change_dish"   : user wants to change one specific meal to a different dish
 - "swap_dishes"   : user wants to swap two meals with each other
 - "unclear"       : you are not confident what they want
-- "ignore"        : the message is not about the menu (chit-chat, jokes, etc.)
+- "ignore"        : the message is not about the menu
 
-If intent is "change_dish", extract:
-- day       : one of Monday/Tuesday/Wednesday/Thursday/Friday/Saturday/Sunday
-- meal      : one of breakfast / lunch / dinner
-- new_dish  : the dish name they want (natural language ok, don't invent)
-
-If intent is "swap_dishes", extract:
-- day1, meal1, day2, meal2
+If intent is "change_dish", extract: day, meal, new_dish
+If intent is "swap_dishes", extract: day1, meal1, day2, meal2
 
 Return STRICT JSON. No markdown. Example outputs:
-
 {{"intent": "change_dish", "day": "Wednesday", "meal": "dinner", "new_dish": "dal tadka"}}
 {{"intent": "confirm"}}
 {{"intent": "swap_dishes", "day1": "Tuesday", "meal1": "lunch", "day2": "Thursday", "meal2": "lunch"}}
-{{"intent": "unclear", "reason": "user mentioned dinner but didn't say which day"}}
+{{"intent": "unclear", "reason": "..."}}
 {{"intent": "ignore"}}
 
-Now parse this message. Output ONLY the JSON:
+Output ONLY the JSON:
 """
     response = call_gemini(client, prompt)
     raw = response.text.strip()
@@ -191,17 +222,13 @@ def summarize_plan(plan):
     lines = [f"Week of {plan['week_starting']}:"]
     for day in plan["days"]:
         lines.append(
-            f"- {day['day_of_week']}: "
+            f"- {day['day_of_week']} ({day.get('date','')}): "
             f"BF={day['breakfast'].get('dish_name', '?')}, "
             f"L={day['lunch'].get('dish_name', '?')}, "
             f"D={day['dinner'].get('dish_name', '?')}"
         )
     return "\n".join(lines)
 
-
-# =========================================================
-# Dish matching with confidence
-# =========================================================
 
 def find_dish_by_id_literal(dishes, hint):
     hint = hint.strip().upper()
@@ -219,7 +246,7 @@ def find_dish_id_by_name(client, dishes, name_hint):
 
     dish_list = "\n".join(f"[{d['dish_id']}] {d['dish_name']}" for d in dishes)
     prompt = f"""From this dish catalog, find the ONE dish_id that best matches the user's request.
-Then rate your confidence in the match.
+Then rate your confidence.
 
 Catalog:
 {dish_list}
@@ -227,11 +254,11 @@ Catalog:
 User asked for: "{name_hint}"
 
 Guidelines:
-- "high" confidence: user's words clearly identify this exact dish
-- "low" confidence: user's words are vague or match multiple dishes
+- "high": user's words clearly identify this exact dish
+- "low": user's words are vague or match multiple dishes
 - "none": no dish reasonably matches
 
-Return STRICT JSON. Examples:
+Return STRICT JSON:
 {{"dish_id": "D007", "confidence": "high"}}
 {{"dish_id": "D013", "confidence": "low", "alternates": ["D014", "D015"]}}
 {{"dish_id": null, "confidence": "none"}}
@@ -254,31 +281,30 @@ Output ONLY the JSON:
 
 
 # =========================================================
-# Apply edits
+# Apply edits (with explicit-date confirmations)
 # =========================================================
 
 def apply_change_dish(client, plan, dishes, parsed):
     day = find_day(plan, parsed["day"])
     if not day:
-        return f"❌ Couldn't find day '{parsed['day']}'. Nothing changed."
+        return None, f"❌ Couldn't find day '{parsed['day']}'. Nothing changed."
     meal = parsed["meal"].lower()
     if meal not in ("breakfast", "lunch", "dinner"):
-        return f"❌ '{parsed['meal']}' isn't a valid meal. Nothing changed."
+        return None, f"❌ '{parsed['meal']}' isn't a valid meal. Nothing changed."
 
-    new_dish_id, confidence, alternates = find_dish_id_by_name(
-        client, dishes, parsed["new_dish"]
-    )
+    new_dish_id, confidence, alternates = find_dish_id_by_name(client, dishes, parsed["new_dish"])
 
     if confidence == "none" or not new_dish_id:
-        return (
-            f"⚠️ I couldn't find a dish matching '{parsed['new_dish']}' in the catalog. "
+        return None, (
+            f"⚠️ I couldn't find a dish matching '{parsed['new_dish']}'. "
             f"Nothing changed. Try being more specific."
         )
 
     if confidence == "low":
         primary = next((d for d in dishes if d["dish_id"] == new_dish_id), None)
+        day_label = format_day_label(day)
         msg = (
-            f"🤔 '{parsed['new_dish']}' is a bit vague — closest match I found is:\n"
+            f"🤔 '{parsed['new_dish']}' is vague — closest match:\n"
             f"  • {primary['dish_name']} ({new_dish_id})\n"
         )
         if alternates:
@@ -290,55 +316,55 @@ def apply_change_dish(client, plan, dishes, parsed):
             if alt_lines:
                 msg += "Other possibilities:\n" + "\n".join(alt_lines) + "\n"
         msg += (
-            f"\nNothing changed yet. Reply with the exact dish name, "
-            f"or the dish_id (e.g. 'change {day['day_of_week']} {meal} to {new_dish_id}')."
+            f"\nNothing changed yet. Reply with the exact dish name or dish_id "
+            f"(e.g. 'change {day_label} {meal} to {new_dish_id}')."
         )
-        return msg
+        return None, msg
 
     new_dish = next((d for d in dishes if d["dish_id"] == new_dish_id), None)
     if not new_dish:
-        return f"❌ Dish '{new_dish_id}' not in catalog. Nothing changed."
+        return None, f"❌ Dish '{new_dish_id}' not in catalog. Nothing changed."
 
     old_name = day[meal].get("dish_name", "?")
     day[meal]["dish_id"]   = new_dish_id
     day[meal]["dish_name"] = new_dish["dish_name"]
-    day[meal]["reasoning"] = f"Changed by user request"
+    day[meal]["reasoning"] = "Changed by user request"
     save_plan(plan)
-    return f"✅ {day['day_of_week']} {meal}: {old_name} → {new_dish['dish_name']}"
+    day_label = format_day_label(day)
+    return True, f"✅ {day_label} {meal}: {old_name} → {new_dish['dish_name']}"
 
 
 def apply_swap(plan, parsed):
     d1 = find_day(plan, parsed["day1"])
     d2 = find_day(plan, parsed["day2"])
     if not d1 or not d2:
-        return "❌ Couldn't find one of those days. Nothing swapped."
+        return None, "❌ Couldn't find one of those days. Nothing swapped."
     m1 = parsed["meal1"].lower()
     m2 = parsed["meal2"].lower()
     if m1 not in ("breakfast", "lunch", "dinner"):
-        return f"❌ '{parsed['meal1']}' isn't a valid meal. Nothing swapped."
+        return None, f"❌ '{parsed['meal1']}' isn't a valid meal. Nothing swapped."
     if m2 not in ("breakfast", "lunch", "dinner"):
-        return f"❌ '{parsed['meal2']}' isn't a valid meal. Nothing swapped."
+        return None, f"❌ '{parsed['meal2']}' isn't a valid meal. Nothing swapped."
 
     old_name_1 = d1[m1].get("dish_name", "?")
     old_name_2 = d2[m2].get("dish_name", "?")
     d1[m1], d2[m2] = d2[m2], d1[m1]
     save_plan(plan)
-    return (
+
+    label1 = format_day_label(d1)
+    label2 = format_day_label(d2)
+    return True, (
         f"✅ Swapped:\n"
-        f"  {d1['day_of_week']} {m1}: {old_name_1} ↔ {old_name_2}\n"
-        f"  {d2['day_of_week']} {m2}: {old_name_2} ↔ {old_name_1}"
+        f"  {label1} {m1}: {old_name_1} ↔ {old_name_2}\n"
+        f"  {label2} {m2}: {old_name_2} ↔ {old_name_1}"
     )
 
 
 # =========================================================
-# Day 8: Ratings
+# Ratings
 # =========================================================
 
 def try_parse_rating(text):
-    """
-    Try to extract 3 ratings from a message.
-    Returns (bf, lunch, dinner) as ints, or 'skip', or None.
-    """
     lowered = text.strip().lower()
     if lowered in ("skip", "no", "pass"):
         return "skip"
@@ -349,11 +375,6 @@ def try_parse_rating(text):
 
 
 def save_rating_to_sheet(plan, ratings):
-    """
-    Persist today's ratings to Google Sheets 'feedback' tab.
-    Returns True on success, False if today isn't in the plan.
-    Raises on real errors (sheet write failure).
-    """
     from load_data import get_sheet
     sheet = get_sheet()
     ws = sheet.worksheet("feedback")
@@ -381,78 +402,180 @@ def save_rating_to_sheet(plan, ratings):
 
 
 # =========================================================
+# Resend logic (dashboard regen + send full update)
+# =========================================================
+
+def regenerate_dashboard():
+    """Run render_dashboard.py to refresh dashboard.html."""
+    try:
+        result = subprocess.run(
+            ["python", "render_dashboard.py"],
+            capture_output=True, text=True, timeout=60
+        )
+        if result.returncode != 0:
+            print(f"   ⚠️  Dashboard regen failed: {result.stderr}")
+            return False
+        return True
+    except Exception as e:
+        print(f"   ⚠️  Dashboard regen error: {e}")
+        return False
+
+
+def send_updated_menu_and_dashboard(plan):
+    """Send the full updated menu message + updated dashboard.html."""
+    try:
+        from send_to_telegram import (
+            format_week_message, send_message, send_document, load_dish_lookup
+        )
+        dish_lookup = load_dish_lookup()
+        menu_msg = format_week_message(plan, dish_lookup)
+        header = "📋 UPDATED MENU (after recent edits)\n\n"
+        send_message(header + menu_msg)
+        time.sleep(1)
+        if os.path.exists(DASHBOARD_FILE):
+            send_document(
+                DASHBOARD_FILE,
+                caption="🎨 Updated dashboard — tap to open"
+            )
+        return True
+    except Exception as e:
+        print(f"   ⚠️  Failed to send updated menu: {e}")
+        return False
+
+
+def do_full_resend(plan):
+    """Regenerate dashboard, then send updated menu + dashboard to family group."""
+    print("📤 Regenerating dashboard and sending updated menu...")
+    regenerate_dashboard()
+    return send_updated_menu_and_dashboard(plan)
+
+
+# =========================================================
 # Main message handler
 # =========================================================
 
-def handle_message(client, plan, dishes, message):
+def handle_message(client, plan, dishes, message, state):
+    """
+    Returns (reply_text, edit_applied_bool).
+    edit_applied_bool tells main() whether to update pending_resend flag.
+    """
     user_id = message.get("from", {}).get("id")
     if user_id not in ALLOWED_USERS:
-        return None
+        return None, False
 
     text = message.get("text", "").strip()
     if not text:
-        return None
+        return None, False
 
     if message.get("from", {}).get("is_bot"):
-        return None
+        return None, False
 
     print(f"📨 Message from {user_id}: {text[:80]}")
 
-    # Rating check FIRST — before keyword filter
-    # (rating messages are numbers like "4,3,5" and won't match menu keywords)
+    # Rating check first — pure regex, no LLM
     rating = try_parse_rating(text)
     if rating == "skip":
         print("   User skipped feedback")
-        return "👍 No feedback today, noted."
+        return "👍 No feedback today, noted.", False
     if isinstance(rating, tuple):
         print(f"   Detected rating: {rating}")
         try:
             saved = save_rating_to_sheet(plan, rating)
             if saved:
-                return f"✅ Thanks! Ratings saved: BF={rating[0]}, Lunch={rating[1]}, Dinner={rating[2]}"
+                return (
+                    f"✅ Thanks! Ratings saved: BF={rating[0]}, "
+                    f"Lunch={rating[1]}, Dinner={rating[2]}"
+                ), False
             else:
                 today_str = date.today().isoformat()
                 return (
                     f"🤔 Got your rating ({rating[0]},{rating[1]},{rating[2]}), "
-                    f"but today ({today_str}) isn't in the current menu plan. "
-                    f"Rating not saved."
-                )
+                    f"but today ({today_str}) isn't in the current plan. Rating not saved."
+                ), False
         except Exception as e:
             print(f"   Failed to save rating: {e}")
-            return f"⚠️ Got your rating but couldn't save it: {e}"
+            return f"⚠️ Got your rating but couldn't save it: {e}", False
 
-    # Now the keyword filter for edit intents
+    # Explicit resend request — do immediately
+    if is_resend_request(text):
+        print("   Explicit resend requested")
+        do_full_resend(plan)
+        # After a manual resend, clear the pending flag
+        state["pending_resend"] = False
+        return None, False
+
+    # Keyword pre-filter
     if not looks_menu_related(text):
         print(f"   Skipped (no menu keywords)")
-        return None
+        return None, False
 
+    # Otherwise it's an edit/confirm/unclear intent
     summary = summarize_plan(plan)
     try:
         parsed = parse_message(client, text, summary)
     except Exception as e:
         print(f"   Failed to parse: {e}")
-        return None
+        return None, False
 
     intent = parsed.get("intent")
     print(f"   Intent: {intent}")
 
     if intent == "ignore":
-        return None
+        return None, False
     if intent == "confirm":
-        return "👍 Got it — week confirmed! Grocery list stays the same."
+        return "👍 Got it — week confirmed! Grocery list stays the same.", False
     if intent == "unclear":
         reason = parsed.get("reason", "not sure what to change")
         return (
             f"🤔 Not sure I understood — {reason}.\n"
             f"Try: 'change [day] [meal] to [dish]', "
-            f"'swap [day1] [meal1] with [day2] [meal2]', or 'ok' to confirm."
-        )
+            f"'swap [day1] [meal1] with [day2] [meal2]', "
+            f"'show menu' to see the latest, or 'ok' to confirm."
+        ), False
     if intent == "change_dish":
-        return apply_change_dish(client, plan, dishes, parsed)
+        applied, reply = apply_change_dish(client, plan, dishes, parsed)
+        return reply, bool(applied)
     if intent == "swap_dishes":
-        return apply_swap(plan, parsed)
+        applied, reply = apply_swap(plan, parsed)
+        return reply, bool(applied)
 
-    return None
+    return None, False
+
+
+# =========================================================
+# Main loop
+# =========================================================
+
+def maybe_quiet_resend(plan, state):
+    """
+    If there's a pending resend and 15+ min have passed since last edit,
+    send updated menu + dashboard.
+    """
+    if not state.get("pending_resend"):
+        return
+
+    last_edit_str = state.get("last_edit_at")
+    if not last_edit_str:
+        return
+
+    try:
+        last_edit = datetime.fromisoformat(last_edit_str)
+    except (ValueError, TypeError):
+        return
+
+    now = datetime.now()
+    quiet_gap = timedelta(minutes=QUIET_RESEND_MINUTES)
+    time_since_edit = now - last_edit
+
+    if time_since_edit >= quiet_gap:
+        print(f"🕐 {int(time_since_edit.total_seconds()/60)} min since last edit "
+              f"(threshold: {QUIET_RESEND_MINUTES} min). Sending quiet update...")
+        if do_full_resend(plan):
+            state["pending_resend"] = False
+            state["last_resend_at"] = now.isoformat()
+    else:
+        remaining = int((quiet_gap - time_since_edit).total_seconds() / 60)
+        print(f"🕐 Pending resend queued. {remaining} min until quiet window.")
 
 
 def main():
@@ -477,13 +600,10 @@ def main():
     updates = fetch_updates(offset)
     print(f"  {len(updates)} new updates.")
 
-    if not updates:
-        print("Nothing to do.")
-        return
-
     client = genai.Client(api_key=GEMINI_KEY)
-
     processed_ids = []
+    any_edit_applied = False
+
     for update in updates:
         update_id = update.get("update_id")
         message = update.get("message")
@@ -492,10 +612,10 @@ def main():
             continue
 
         try:
-            reply = handle_message(client, plan, dishes, message)
+            reply, edit_applied = handle_message(client, plan, dishes, message, state)
         except Exception as e:
             print(f"   Error handling message: {e}")
-            reply = None
+            reply, edit_applied = None, False
 
         if reply:
             try:
@@ -504,12 +624,24 @@ def main():
             except Exception as e:
                 print(f"   Failed to send reply: {e}")
 
+        if edit_applied:
+            any_edit_applied = True
+
         processed_ids.append(update_id)
 
     if processed_ids:
         state["last_update_id"] = max(processed_ids)
-        save_state(state)
-        print(f"State updated. last_update_id = {state['last_update_id']}")
+
+    if any_edit_applied:
+        state["last_edit_at"] = datetime.now().isoformat()
+        state["pending_resend"] = True
+        print(f"📝 Edit(s) applied. Quiet resend scheduled for {QUIET_RESEND_MINUTES} min after last edit.")
+    else:
+        # No edit this run — check if pending resend is due
+        maybe_quiet_resend(plan, state)
+
+    save_state(state)
+    print(f"State updated. last_update_id = {state.get('last_update_id')}")
 
 
 if __name__ == "__main__":
