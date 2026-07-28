@@ -29,10 +29,10 @@
       "day_of_week": "Tuesday",
       "is_training_day": true,
       "breakfast": {
-        "dish_id": "D008",
-        "dish_name": "Neer Dosa with Egg curry",
+        "dish_id": "D012",
+        "dish_name": "Rava Idli with Peanut Chutney",
         "supplement": "none",
-        "reasoning": "High protein (egg), complexity 1 for weekday. Shloka's dislike is noted but acceptable for variety and protein."
+        "reasoning": "Changed by user request"
       },
       "lunch": {
         "dish_id": "D019",
