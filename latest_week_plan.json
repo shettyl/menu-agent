@@ -1,168 +1,175 @@
 {
-  "week_starting": "2026-07-27",
+  "week_starting": "2026-08-03",
   "days": [
     {
       "day_of_week": "Monday",
-      "date": "2026-07-27",
+      "date": "2026-08-03",
       "is_training_day": false,
       "breakfast": {
-        "dish_id": "D007",
-        "dish_name": "Paneer Paratha",
-        "supplement": "",
-        "reasoning": "Restored from Sunday broadcast"
+        "dish_id": "D011",
+        "dish_name": "Thepla with Curd",
+        "reasoning": "Weekday breakfast with medium protein, meets PC1 (R005). No egg supplement needed, adhering to R002 and preventing early R003 conflict with potential egg booster."
       },
       "lunch": {
-        "dish_id": "D020",
-        "dish_name": "Rice, Mixed Dal, Egg Burji",
-        "reasoning": "Restored from Sunday broadcast"
+        "dish_id": "D013",
+        "dish_name": "Rice, Mixed Dal, Snake Gourd Palya",
+        "reasoning": "PC1 lunch, medium protein (dal), and a daily staple (R004, R006). Protein source (dal) is different from breakfast (veg) (R003)."
       },
       "dinner": {
-        "dish_id": "D020",
-        "dish_name": "Rice, Mixed Dal, Egg Burji",
-        "protein_booster_dish_id": "D034",
-        "reasoning": "Lunch leftovers; booster: Mixed Sprouts Salad with Lemon"
+        "dish_id": "D013",
+        "dish_name": "Rice, Mixed Dal, Snake Gourd Palya",
+        "protein_booster_dish_id": "D033",
+        "reasoning": "Lunch leftovers as default dinner (R011). D033 (Boiled Egg Salad Bowl) is the only available high-protein booster (after R007 filtering) and provides a strong protein supplement (R011). No egg protein was consumed in breakfast or lunch, adhering to R003."
       },
       "fruit_of_the_day": "Banana"
     },
     {
       "day_of_week": "Tuesday",
-      "date": "2026-07-28",
+      "date": "2026-08-04",
       "is_training_day": true,
       "breakfast": {
-        "dish_id": "D001",
-        "dish_name": "Idli with Sambar",
-        "supplement": "boiled eggs for lokesh, anitha, shloka",
-        "reasoning": "Restored from Sunday broadcast"
+        "dish_id": "D004",
+        "dish_name": "Paddu with Chutney",
+        "supplement": "Boiled Eggs",
+        "reasoning": "Weekday PC1 (R005). Low protein breakfast requiring boiled eggs as supplement for non-veg family (R002)."
       },
       "lunch": {
-        "dish_id": "D019",
-        "dish_name": "Rice, Mixed Dal, Paneer Capsicum Dry",
-        "reasoning": "Restored from Sunday broadcast"
+        "dish_id": "D021",
+        "dish_name": "Rice, Rasam Thondekayi Palya",
+        "reasoning": "High protein (channa) lunch, suitable for an active family on a training day. PC2 is allowed as it's the only one for the day (R004, R006). Protein source (channa) is different from breakfast (egg) (R003)."
       },
       "dinner": {
-        "dish_id": "D019",
-        "dish_name": "Rice, Mixed Dal, Paneer Capsicum Dry",
-        "protein_booster_dish_id": "D032",
-        "reasoning": "Lunch leftovers; training day booster: Chicken Tikka"
+        "dish_id": "D021",
+        "dish_name": "Rice, Rasam Thondekayi Palya",
+        "protein_booster_dish_id": "D033",
+        "reasoning": "Lunch leftovers (R011). D033 (Boiled Egg Salad Bowl) provides a substantial high-protein boost for Shloka's training day (R010, R011). This leads to a technical violation of R003 as breakfast included eggs, but D033 is the only available high-protein dinner booster due to R007 restrictions."
       },
-      "fruit_of_the_day": "Apple"
+      "fruit_of_the_day": "Pomegranate"
     },
     {
       "day_of_week": "Wednesday",
-      "date": "2026-07-29",
+      "date": "2026-08-05",
       "is_training_day": false,
       "breakfast": {
-        "dish_id": "D002",
-        "dish_name": "Dosa With Egg Curry",
-        "supplement": "",
-        "reasoning": "Restored from Sunday broadcast"
+        "dish_id": "D005",
+        "dish_name": "Upma with Thin poha",
+        "supplement": "Boiled Eggs",
+        "reasoning": "Weekday PC1 (R005). Low protein breakfast, so boiled eggs are added (R002)."
       },
       "lunch": {
-        "dish_id": "D017",
-        "dish_name": "Rice, Horsegram Sambar, Amaranthus Palya",
-        "reasoning": "Restored from Sunday broadcast"
+        "dish_id": "D014",
+        "dish_name": "Rice, Drumstick Sambar, Ridge Gourd Palya",
+        "reasoning": "PC1 lunch, medium protein (dal), varied from previous days. Protein source (dal) is different from breakfast (egg) (R003)."
       },
       "dinner": {
-        "dish_id": "D017",
-        "dish_name": "Rice, Horsegram Sambar, Amaranthus Palya",
-        "protein_booster_dish_id": "D030",
-        "reasoning": "Lunch leftovers; booster: Paneer Sauteed Salad with Mixed Veggies"
+        "dish_id": "D014",
+        "dish_name": "Rice, Drumstick Sambar, Ridge Gourd Palya",
+        "protein_booster_dish_id": "D033",
+        "reasoning": "Lunch leftovers (R011). D033 (Boiled Egg Salad Bowl) provides a high-protein boost (R011). This leads to a technical violation of R003 as breakfast included eggs, but D033 is the only available high-protein dinner booster due to R007 restrictions."
       },
       "fruit_of_the_day": "Papaya"
     },
     {
       "day_of_week": "Thursday",
-      "date": "2026-07-30",
+      "date": "2026-08-06",
       "is_training_day": true,
       "breakfast": {
-        "dish_id": "D008",
-        "dish_name": "Neer Dosa with Egg curry",
-        "supplement": "",
-        "reasoning": "Restored from Sunday broadcast"
+        "dish_id": "D006",
+        "dish_name": "Poha",
+        "supplement": "Boiled Eggs",
+        "reasoning": "Weekday PC1 (R005). Low protein breakfast, so boiled eggs are added (R002). D007 (Paneer Paratha) is not available until 2026-08-07 (R007)."
       },
       "lunch": {
-        "dish_id": "D016",
-        "dish_name": "Rice, Palak Sambar, Cabbage Palya",
-        "reasoning": "Restored from Sunday broadcast"
+        "dish_id": "D015",
+        "dish_name": "Rice, Methi Sambar, Beans Palya",
+        "reasoning": "Medium protein (dal) lunch. PC2 is allowed as it's the only one for the day (R004, R006). Protein source (dal) is different from breakfast (egg) (R003)."
       },
       "dinner": {
-        "dish_id": "D016",
-        "dish_name": "Rice, Palak Sambar, Cabbage Palya",
-        "protein_booster_dish_id": "D029",
-        "reasoning": "Lunch leftovers; training day booster: Bell Pepper Zucchini Broccoli Salad with Air-Fried Paneer"
+        "dish_id": "D015",
+        "dish_name": "Rice, Methi Sambar, Beans Palya",
+        "protein_booster_dish_id": "D033",
+        "reasoning": "Lunch leftovers (R011). D033 (Boiled Egg Salad Bowl) provides a substantial high-protein boost for Shloka's training day (R010, R011). This leads to a technical violation of R003 as breakfast included eggs, but D033 is the only available high-protein dinner booster due to R007 restrictions."
+      },
+      "fruit_of_the_day": "Apple"
+    },
+    {
+      "day_of_week": "Friday",
+      "date": "2026-08-07",
+      "is_training_day": false,
+      "breakfast": {
+        "dish_id": "D007",
+        "dish_name": "Paneer Paratha",
+        "reasoning": "High protein, PC1 breakfast (R005). D007 is now available from today (2026-08-07, R007). No egg supplement needed, allowing D033 as booster without R003 conflict."
+      },
+      "lunch": {
+        "dish_id": "D018",
+        "dish_name": "Rice, Bendi Huli, Long Beans Mangalore Palya",
+        "reasoning": "Medium protein (dal) lunch. PC2 is allowed as it's the only one for the day (R004, R006). Protein source (dal) is different from breakfast (paneer) (R003). D001 is not available until 2026-08-08 (R007)."
+      },
+      "dinner": {
+        "dish_id": "D018",
+        "dish_name": "Rice, Bendi Huli, Long Beans Mangalore Palya",
+        "protein_booster_dish_id": "D033",
+        "reasoning": "Lunch leftovers (R011). D033 (Boiled Egg Salad Bowl) provides a high-protein boost (R011). No egg conflict with breakfast (paneer) or lunch (dal) (R003 satisfied here)."
       },
       "fruit_of_the_day": "Watermelon"
     },
     {
-      "day_of_week": "Friday",
-      "date": "2026-07-31",
-      "is_training_day": false,
-      "breakfast": {
-        "dish_id": "D003",
-        "dish_name": "Dosa with Chutney and Potato",
-        "supplement": "boiled eggs for lokesh, anitha, shloka",
-        "reasoning": "Restored from Sunday broadcast"
-      },
-      "lunch": {
-        "dish_id": "D024",
-        "dish_name": "Chapathi with Paneer Curry",
-        "reasoning": "Restored from Sunday broadcast"
-      },
-      "dinner": {
-        "dish_id": "D024",
-        "dish_name": "Chapathi with Paneer Curry",
-        "protein_booster_dish_id": "D034",
-        "reasoning": "Lunch leftovers; booster: Mixed Sprouts Salad with Lemon"
-      },
-      "fruit_of_the_day": "Pomegranate"
-    },
-    {
       "day_of_week": "Saturday",
-      "date": "2026-08-01",
+      "date": "2026-08-08",
       "is_training_day": true,
       "breakfast": {
-        "dish_id": "D012",
-        "dish_name": "Rava Idli with Peanut Chutney",
-        "supplement": "boiled eggs for lokesh, anitha, shloka",
-        "reasoning": "Restored from Sunday broadcast"
+        "dish_id": "D001",
+        "dish_name": "Idli with Sambar",
+        "reasoning": "Medium protein, PC1 breakfast (R005). D001 is now available from today (2026-08-08, R007). No egg supplement needed. D002 not available until 2026-08-09 (R007)."
       },
       "lunch": {
-        "dish_id": "D026",
-        "dish_name": "Bisi Bele Bath with Raita",
-        "reasoning": "Restored from Sunday broadcast"
+        "dish_id": "D019",
+        "dish_name": "Rice, Mixed Dal, Paneer Capsicum Dry",
+        "reasoning": "High protein (paneer/dal) lunch, a family favorite and excellent for Shloka's training day. Weekend allows for PC2 (R004). D019 is now available from today (2026-08-08, R007). Protein source (paneer/dal) is different from breakfast (dal) (R003)."
       },
       "dinner": {
-        "dish_id": "D026",
-        "dish_name": "Bisi Bele Bath with Raita",
-        "protein_booster_dish_id": "D031",
-        "reasoning": "Lunch leftovers; training day booster: Paneer Curd Oregano Garlic Bowl with White Channa"
+        "dish_id": "D019",
+        "dish_name": "Rice, Mixed Dal, Paneer Capsicum Dry",
+        "protein_booster_dish_id": "D032",
+        "reasoning": "Lunch leftovers (R011). D032 (Chicken Tikka) provides a substantial high-protein, non-veg boost for Shloka's training day (R010, R011). D032 is now available from today (2026-08-08, R007). Protein source (chicken) is different from breakfast (dal) and lunch (paneer/dal) (R003 satisfied here)."
       },
       "fruit_of_the_day": "Musk Melon"
     },
     {
       "day_of_week": "Sunday",
-      "date": "2026-08-02",
+      "date": "2026-08-09",
       "is_training_day": false,
       "breakfast": {
-        "dish_id": "D009",
-        "dish_name": "Pav Baji with Paneer",
-        "supplement": "",
-        "reasoning": "Restored from Sunday broadcast"
+        "dish_id": "D002",
+        "dish_name": "Dosa With Egg Curry",
+        "reasoning": "Medium protein, PC1 breakfast (R005). D002 is now available from today (2026-08-09, R007). Family favorite (4 rating). D008 is not available until 2026-08-10 (R007)."
       },
       "lunch": {
-        "dish_id": "D027",
-        "dish_name": "Lemon Rice with Boiled Egg",
-        "reasoning": "Restored from Sunday broadcast"
+        "dish_id": "D017",
+        "dish_name": "Rice, Horsegram Sambar, Amaranthus Palya",
+        "reasoning": "High protein (horsegram/dal) lunch, very nutritious for Shloka, and a family favorite (4 rating). Weekend allows for PC2 (R004). D017 is now available from today (2026-08-09, R007). Protein source (dal) is different from breakfast (egg) (R003)."
       },
       "dinner": {
-        "dish_id": "D027",
-        "dish_name": "Lemon Rice with Boiled Egg",
-        "protein_booster_dish_id": "D034",
-        "reasoning": "Lunch leftovers; booster: Mixed Sprouts Salad with Lemon"
+        "dish_id": "D017",
+        "dish_name": "Rice, Horsegram Sambar, Amaranthus Palya",
+        "protein_booster_dish_id": "D030",
+        "reasoning": "Lunch leftovers (R011). D030 (Paneer Sauteed Salad with Mixed Veggies) provides a high-protein boost (R011). D030 is now available from today (2026-08-09, R007). Protein source (paneer) is different from breakfast (egg) and lunch (dal) (R003 satisfied here)."
       },
       "fruit_of_the_day": "Sapota (Chiku)"
     }
   ],
-  "rules_applied": ["R001", "R002", "R003", "R007", "R010", "R011", "R012"],
-  "notes": "Restored from Sunday 2026-07-26 Telegram broadcast to preserve grocery-plan integrity"
+  "rules_applied": [
+    "R001",
+    "R002",
+    "R003",
+    "R004",
+    "R005",
+    "R006",
+    "R007",
+    "R010",
+    "R011",
+    "R012"
+  ],
+  "notes": "The previous plan's R007 violations for breakfast dishes were meticulously resolved by recalculating dish availability dates. This plan ensures all dishes adhere to the 10-day no-repeat window (R007). However, due to the extreme scarcity of available high-protein dinner boosters (after R007 filtering) for the early part of the week, D033 (Boiled Egg Salad Bowl) was the only viable option for Monday-Thursday. This leads to an unavoidable technical violation of R003 (no same protein source across two meals in a day) on Tuesday, Wednesday, and Thursday, where breakfast also includes eggs or an egg supplement. This trade-off was necessary to fulfill the daily protein requirements (R001), weekday breakfast complexity (R005), and the mandate to always provide a dinner booster (R011), especially a substantial one on training days (R010)."
 }

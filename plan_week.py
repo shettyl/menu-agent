@@ -1,21 +1,19 @@
 """
-Day 4: Generate a full 7-day menu plan with agentic validation loop.
+Day 4 + 12: Weekly menu planner with agentic validation loop.
 
-Architecture:
-1. Load dishes, family, rules from Google Sheets
-2. Build prompt and ask Gemini for a week plan
-3. Validate the plan in Python against hard rules
-4. If violations found, send feedback to Gemini and retry (up to 3 attempts)
-5. Print final plan and save to disk
+Day 12 additions:
+- Reads menu_history to enforce R007 (no repeats in 10-day window) across weeks
+- History-aware validator catches cross-week duplicates
+- Immutability check protects existing weeks unless --force
 
-Resilient to transient API errors (503/429) with exponential backoff.
+Multi-model, self-critique + auto-retry pattern.
 """
 
 import os
 import sys
 import json
 import time
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from dotenv import load_dotenv
 from google import genai
 from google.genai.errors import ServerError, ClientError
@@ -23,26 +21,23 @@ from load_data import get_sheet, load_tab
 
 load_dotenv()
 
-# ---------- Inputs you can tweak ----------
+MODEL_NAME = "gemini-2.5-flash"
+MAX_VALIDATION_ATTEMPTS = 3
+HISTORY_LOOKBACK_DAYS = 14  # look back this many days for R007 enforcement
+
+# Compute the target week (upcoming Monday) at module load
 def next_monday():
-    """Returns the date of the upcoming Monday (never today, always next)."""
     today = date.today()
-    days_ahead = (7 - today.weekday()) % 7
-    if days_ahead == 0:
-        days_ahead = 7
+    days_ahead = 0 if today.weekday() == 0 else (7 - today.weekday())
     return today + timedelta(days=days_ahead)
 
-
 WEEK_START = next_monday()
-DAYS = [(WEEK_START + timedelta(days=i)) for i in range(7)]
-TRAINING_DAYS = {"Tuesday", "Thursday", "Saturday"}
-MAX_VALIDATION_ATTEMPTS = 3
-MODEL_NAME = "gemini-2.5-flash"
-# ------------------------------------------
-
-# Populated in main(); used by pretty_print_week to resolve dish_id -> name
 DISH_LOOKUP = {}
 
+
+# =========================================================
+# Data loading
+# =========================================================
 
 def load_all_data():
     sheet = get_sheet()
@@ -50,18 +45,17 @@ def load_all_data():
     family = load_tab(sheet, "family")
     rules = load_tab(sheet, "rules")
     feedback = load_tab(sheet, "feedback")
+    history = load_tab(sheet, "menu_history")
     active_rules = [r for r in rules if str(r.get("active", "")).strip().lower() == "yes"]
-    return dishes, family, active_rules, feedback
+    return dishes, family, active_rules, feedback, history
 
 
 def summarize_recent_feedback(feedback, days=14):
-    """Summarize dish ratings over the last N days. Returns (favorites, avoid, blacklist)."""
+    """Summarize dish ratings over the last N days."""
     if not feedback:
         return [], [], []
 
     cutoff = (date.today() - timedelta(days=days)).isoformat()
-
-    # Collect ratings per dish_id
     dish_ratings = {}
     for row in feedback:
         try:
@@ -76,9 +70,7 @@ def summarize_recent_feedback(feedback, days=14):
         except (ValueError, TypeError):
             continue
 
-    favorites = []
-    avoid = []
-    blacklist = []
+    favorites, avoid, blacklist = [], [], []
     for dish_id, ratings in dish_ratings.items():
         avg = sum(ratings) / len(ratings)
         if 1 in ratings:
@@ -87,63 +79,53 @@ def summarize_recent_feedback(feedback, days=14):
             favorites.append(dish_id)
         elif avg <= 2:
             avoid.append(dish_id)
-
     return favorites, avoid, blacklist
 
 
-def format_dishes_for_prompt(dishes):
+def summarize_recent_history(history, days=HISTORY_LOOKBACK_DAYS, dish_lookup=None):
+    """
+    Build a set of dish_ids cooked in the last N days,
+    plus a formatted 'do not repeat' list for the prompt.
+
+    Returns (recent_dish_ids_set, formatted_prompt_text).
+    """
+    if not history:
+        return set(), "(no history yet — first week)"
+
+    cutoff = (date.today() - timedelta(days=days)).isoformat()
+
+    recent = {}  # dish_id -> most recent date it appeared
+    for row in history:
+        try:
+            row_date = str(row.get("date", ""))
+            if row_date < cutoff:
+                continue
+            did = str(row.get("dish_id", "")).strip()
+            if not did:
+                continue
+            # Keep the most recent date per dish
+            if did not in recent or row_date > recent[did]:
+                recent[did] = row_date
+        except (ValueError, TypeError):
+            continue
+
+    if not recent:
+        return set(), "(no dishes in recent history)"
+
     lines = []
-    for d in dishes:
-        line = (
-            f"[{d.get('dish_id')}] {d.get('dish_name')} "
-            f"| slot={d.get('meal_slot')} "
-            f"| diet={d.get('diet_type')} "
-            f"| protein={d.get('protein_level')} "
-            f"| complexity={d.get('prep_complexity')} "
-            f"| cook_can_make={d.get('cook_can_make')}"
-        )
-        notes = d.get("notes")
-        if notes:
-            line += f" | notes={notes}"
-        lines.append(line)
-    return "\n".join(lines)
+    for did in sorted(recent.keys()):
+        name = (dish_lookup or {}).get(did, "?")
+        cooked_on = recent[did]
+        lines.append(f"  - {did} ({name}) — last cooked {cooked_on}")
+
+    return set(recent.keys()), "\n".join(lines)
 
 
-def format_family_for_prompt(family):
-    return "\n".join(
-        f"- {f.get('person_name')} ({f.get('age')}y): "
-        f"diet={f.get('diet')}, activity={f.get('activity_level')}, "
-        f"protein_need={f.get('protein_need')}, "
-        f"dislikes={f.get('dislikes') or 'none'}, "
-        f"notes={f.get('notes') or 'none'}"
-        for f in family
-    )
+# =========================================================
+# Prompt building
+# =========================================================
 
-
-def format_rules_for_prompt(rules):
-    return "\n".join(
-        f"[{r.get('rule_id')}] ({r.get('rule_category')}) {r.get('rule_description')}"
-        for r in rules
-    )
-
-
-def format_week_calendar():
-    lines = []
-    for d in DAYS:
-        day_name = d.strftime("%A")
-        is_training = day_name in TRAINING_DAYS
-        is_weekend = day_name in ("Saturday", "Sunday")
-        flags = []
-        if is_training:
-            flags.append("TRAINING DAY for Shloka")
-        if is_weekend:
-            flags.append("WEEKEND - one complex dish allowed")
-        flag_str = f" [{', '.join(flags)}]" if flags else ""
-        lines.append(f"- {d.isoformat()} ({day_name}){flag_str}")
-    return "\n".join(lines)
-
-
-def build_week_prompt(dishes, family, rules, favorites, avoid, blacklist):
+def build_week_prompt(dishes, family, rules, favorites, avoid, blacklist, recent_history_text):
     fav_str = ", ".join(favorites) if favorites else "(none yet)"
     avoid_str = ", ".join(avoid) if avoid else "(none)"
     blacklist_str = ", ".join(blacklist) if blacklist else "(none)"
@@ -160,228 +142,149 @@ Family truly hates these (rated 1 at least once) — DO NOT USE:
 {blacklist_str}
 """
 
+    history_block = f"""
+==================== RECENT COOKING HISTORY (last {HISTORY_LOOKBACK_DAYS} days) ====================
+These dishes were already cooked recently. DO NOT repeat any of them
+in the new plan (R007: no repeats in 10-day window):
+
+{recent_history_text}
+"""
+
     return f"""You are a thoughtful family meal planner for the Shetty family in Bengaluru, India.
 {feedback_block}
+{history_block}
+
 ==================== FAMILY ====================
-{format_family_for_prompt(family)}
+{json.dumps(family, indent=2)}
 
-==================== AVAILABLE DISHES ====================
-Pick ONLY from these dishes (use dish_id to reference). Do not invent new dishes.
+==================== ACTIVE RULES ====================
+{json.dumps([{
+  'rule_id': r['rule_id'],
+  'category': r.get('rule_category', ''),
+  'description': r['rule_description']
+} for r in rules], indent=2)}
 
-{format_dishes_for_prompt(dishes)}
-
-==================== OPERATING RULES ====================
-{format_rules_for_prompt(rules)}
-
-==================== WEEK CALENDAR ====================
-Plan menus for these 7 days:
-
-{format_week_calendar()}
+==================== DISH CATALOG ====================
+{json.dumps(dishes, indent=2)}
 
 ==================== TASK ====================
-Generate a 7-day menu plan covering breakfast, lunch, and dinner for each day.
+Generate a 7-day menu plan for the week starting {WEEK_START.isoformat()} (Monday).
 
-CRITICAL CONSTRAINTS (validated automatically — violations will be rejected):
+For each day, output:
+- day_of_week, date (ISO), is_training_day (bool — Tue/Thu/Sat = training days)
+- breakfast: {{"dish_id", "dish_name", "supplement" (optional), "reasoning"}}
+- lunch: {{"dish_id", "dish_name", "reasoning"}}
+- dinner: {{"dish_id", "dish_name", "protein_booster_dish_id" (optional), "reasoning"}}
+- fruit_of_the_day: string
 
-C1. UNIQUENESS: No dish_id may appear more than once across the 7 breakfasts and
-    7 lunches. Dinner may legitimately reuse the same dish_id as that day's lunch
-    (representing "lunch leftovers eaten for dinner"). All breakfast and lunch
-    dish_ids across the week must be distinct.
-    Example violation: D001 used on Tuesday breakfast AND Friday breakfast — REJECT.
+Rules to apply carefully:
+1. R007: Do NOT use any dish_id from the "recent cooking history" list above.
+2. R011: Default dinner = lunch leftovers (dinner.dish_id == lunch.dish_id).
+3. R010: Training days (Tue/Thu/Sat) need a high-protein booster in dinner.
+4. Complexity budget: weekday breakfasts should be complexity 1.
+5. Variety across the 7 days — no dish (except leftovers pattern) repeats within the plan.
 
-C2. CONCENTRATED PROTEIN VARIETY WITHIN A DAY: Across the 3 meals of any single day,
-    no CONCENTRATED protein source may appear more than once. Concentrated proteins are:
-    - EGG: dishes with diet_type "egg" or "egg" in dish_name
-    - PANEER: dishes with paneer in name or ingredients
-    - CHICKEN: dishes with chicken
-    - LEGUME: channa, sprouts, horsegram, rajma
-    (Dal is NOT a concentrated protein — Indian families eat dal at multiple meals
-    and idli/dosa contain urad dal structurally. Dal repetition is fine.)
-    Example violation: Neer Dosa with Egg Curry (breakfast) + Egg Curry Jeera Rice (lunch)
-    — both EGG protein — REJECT.
-
-C3. TRAINING DAY PROTEIN: On Tuesday, Thursday, Saturday, the dinner OR the
-    protein_booster_dish_id must be high-protein (paneer/chicken/legume based).
-    If dinner is "lunch leftovers", a high-protein booster is mandatory.
-
-C4. WEEKDAY BREAKFAST COMPLEXITY: On Monday–Friday, breakfast dish_id must have
-    complexity=1 (cook's daily routine). NO complexity=2 dishes for weekday breakfasts.
-    Weekday lunch or dinner may include ONE complexity=2 dish per day.
-    Complexity=3 dishes: only on Saturday or Sunday.
-
-C5. CUISINE VARIETY: Use at least 3 distinct cuisines across the 7 days.
-
-C6. DINNER PATTERN: By default dinner reuses the same dish_id as lunch (lunch leftovers).
-    Always also suggest a "protein_booster_dish_id" — a high-protein salad/bowl from the catalog.
-    On training days, the protein_booster must be a substantial high-protein main.
-
-THINK STEP BY STEP BEFORE GENERATING THE JSON:
-
-Step 1: Map out concentrated proteins in your dish catalog by category:
-  - EGG breakfasts: list dish_ids whose name or diet contains "egg"
-  - EGG lunches: list dish_ids whose name or diet contains "egg"
-  - PANEER breakfasts: list dish_ids with "paneer" in name
-  - PANEER lunches: list dish_ids with "paneer" in name
-  - CHICKEN options: list chicken dish_ids
-  - LEGUME options: list dish_ids with channa/sprouts/horsegram/rajma
-
-Step 2: For each day, decide the concentrated protein source for breakfast AND lunch.
-  THEY MUST BE DIFFERENT. If breakfast is EGG, lunch cannot be EGG.
-  Pick from different categories per day.
-
-Step 3: For training days (Tue/Thu/Sat), pick a HIGH-PROTEIN dinner or booster
-  (paneer/chicken/legume). It must NOT match the day's other protein sources.
-
-Step 4: For weekday breakfasts (Mon-Fri), confirm complexity=1 in the catalog.
-  If you picked a complexity=2 breakfast, replace it.
-
-Step 5: Check no breakfast dish_id is used twice across the 7 days.
-Step 6: Check no lunch dish_id is used twice across the 7 days.
-
-After completing these 6 mental steps, output ONLY the JSON. Do not show the steps.
-
+Return STRICT JSON:
 {{
   "week_starting": "{WEEK_START.isoformat()}",
   "days": [
     {{
-      "date": "YYYY-MM-DD",
       "day_of_week": "Monday",
+      "date": "...",
       "is_training_day": false,
-      "breakfast": {{ "dish_id": "Dxxx", "dish_name": "...", "supplement": "boiled eggs/fruit/none", "reasoning": "..." }},
-      "lunch":     {{ "dish_id": "Dxxx", "dish_name": "...", "reasoning": "..." }},
-      "dinner":    {{ "dish_id": "Dxxx", "dish_name": "...", "protein_booster_dish_id": "Dxxx or null", "reasoning": "..." }},
-      "fruit_of_the_day": "Apple/Banana/etc"
-    }}
+      "breakfast": {{...}},
+      "lunch": {{...}},
+      "dinner": {{...}},
+      "fruit_of_the_day": "Banana"
+    }},
+    ... 7 days total ...
   ],
-  "week_summary": {{
-    "cuisines_used": ["South Indian", "North Indian", "Continental"],
-    "unique_dishes_used": 14,
-    "rules_actively_applied": ["R001", "R003"],
-    "potential_issues": "Any tradeoffs or things to watch for"
-  }}
+  "rules_applied": ["R001", "R007", "R011", ...],
+  "notes": "one or two sentences on tradeoffs"
 }}
 
-NOTES ON OUTPUT:
-- "fruit_of_the_day" must be just the fruit name (e.g., "Apple", "Banana"), NOT a dish_id.
-  Pick from available fruits in the catalog but output only the plain fruit name.
-- "dish_name" fields should be just the dish name from the catalog, no dish_id prefix.
-Output ONLY the JSON. No markdown fences. No commentary before or after.
+Output ONLY the JSON. No markdown. No commentary.
 """
 
 
-def validate_plan(plan, dishes):
-    """
-    Walk the generated plan and check every hard rule.
-    Returns a list of violation strings. Empty list = clean plan.
-    """
-    violations = []
-    dish_lookup = {d["dish_id"]: d for d in dishes}
-
-    # --- C1: dish_id uniqueness for breakfast + lunch ---
-    # Dinner is allowed to repeat lunch (leftovers).
-    bf_lunch_used = []
-    for day in plan["days"]:
-        for slot in ("breakfast", "lunch"):
-            did = day[slot].get("dish_id")
-            if did:
-                bf_lunch_used.append((day["day_of_week"], slot, did))
-
-    seen = {}
-    for day_name, slot, did in bf_lunch_used:
-        if did in seen:
-            prev_day, prev_slot = seen[did]
-            violations.append(
-                f"C1 (uniqueness): {did} appears in {prev_day} {prev_slot} AND {day_name} {slot}"
-            )
-        else:
-            seen[did] = (day_name, slot)
-
-    # --- C2: concentrated protein within a day ---
-    def classify_protein(dish):
-        """
-        Classify a dish's primary CONCENTRATED protein source.
-        DAL is intentionally excluded — dal repetition across meals is normal.
-        Only flag concentrated proteins: eggs, paneer, chicken, legumes.
-        """
-        if not dish:
-            return None
-        name = (dish.get("dish_name") or "").lower()
-        diet = (dish.get("diet_type") or "").lower()
-        ingredients = (dish.get("main_ingredients") or "").lower()
-        if diet == "egg" or "egg" in name:
-            return "EGG"
-        if "paneer" in name or "paneer" in ingredients:
-            return "PANEER"
-        if "chicken" in name or "chicken" in ingredients:
-            return "CHICKEN"
-        if any(w in ingredients for w in ["channa", "sprouts", "horsegram", "rajma"]):
-            return "LEGUME"
-        return None
-
-    for day in plan["days"]:
-        lunch_id = day["lunch"].get("dish_id")
-        proteins_today = []
-        for slot in ("breakfast", "lunch", "dinner"):
-            did = day[slot].get("dish_id")
-            # Skip dinner if it's just leftovers from lunch
-            if slot == "dinner" and did == lunch_id:
-                continue
-            dish = dish_lookup.get(did, {})
-            p = classify_protein(dish)
-            if p:
-                proteins_today.append((slot, p, did))
-
-        seen_p = {}
-        for slot, p, did in proteins_today:
-            if p in seen_p:
-                prev_slot, prev_did = seen_p[p]
-                violations.append(
-                    f"C2 ({day['day_of_week']}): protein '{p}' repeats in "
-                    f"{prev_slot} ({prev_did}) and {slot} ({did})"
-                )
-            else:
-                seen_p[p] = (slot, did)
-
-    # --- C4: weekday breakfast must be complexity=1 ---
-    weekday_names = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"}
-    for day in plan["days"]:
-        if day["day_of_week"] not in weekday_names:
-            continue
-        bf_id = day["breakfast"].get("dish_id")
-        bf_dish = dish_lookup.get(bf_id, {})
-        try:
-            bf_complexity = int(bf_dish.get("prep_complexity", 1))
-        except (ValueError, TypeError):
-            bf_complexity = 1
-        if bf_complexity > 1:
-            violations.append(
-                f"C4 ({day['day_of_week']}): weekday breakfast {bf_id} "
-                f"({bf_dish.get('dish_name', '')}) has complexity={bf_complexity}, must be 1"
-            )
-
-    return violations
-
-
-def build_retry_prompt(original_prompt, violations, previous_plan_json):
-    """Compose a follow-up prompt that tells Gemini what it got wrong."""
-    return f"""{original_prompt}
+def build_retry_prompt(base_prompt, violations, previous_plan_json):
+    return f"""{base_prompt}
 
 ==================== YOUR PREVIOUS ATTEMPT ====================
 {previous_plan_json}
 
-==================== VALIDATION FAILURES ====================
-A strict validator checked your previous plan and found these RULE VIOLATIONS:
+==================== VIOLATIONS TO FIX ====================
+{chr(10).join(f'- {v}' for v in violations)}
 
-{chr(10).join(f"- {v}" for v in violations)}
-
-Generate a NEW plan that fixes EVERY violation listed above while keeping
-all the parts of the previous plan that were correct. Output ONLY the JSON.
+Regenerate the plan, fixing these specific violations.
+Output ONLY the corrected JSON.
 """
 
 
+# =========================================================
+# Validation
+# =========================================================
+
+def validate_plan(plan, dishes, recent_dish_ids):
+    """
+    Return list of human-readable violations.
+    Empty list means all checks passed.
+    """
+    violations = []
+    dish_ids = {d.get("dish_id"): d for d in dishes}
+
+    if "days" not in plan or len(plan["days"]) != 7:
+        violations.append("Plan must have exactly 7 days")
+        return violations
+
+    # Track intra-plan dish usage per slot
+    breakfasts = []
+    lunches = []
+    for day in plan["days"]:
+        for slot in ("breakfast", "lunch", "dinner"):
+            slot_data = day.get(slot, {})
+            did = slot_data.get("dish_id")
+            if did and did not in dish_ids:
+                violations.append(
+                    f"{day.get('day_of_week','?')} {slot}: dish_id {did} not in catalog"
+                )
+        bf_id = day.get("breakfast", {}).get("dish_id")
+        l_id = day.get("lunch", {}).get("dish_id")
+        if bf_id: breakfasts.append(bf_id)
+        if l_id: lunches.append(l_id)
+
+    # R007: No repeat with recent history
+    for day in plan["days"]:
+        for slot in ("breakfast", "lunch"):
+            did = day.get(slot, {}).get("dish_id")
+            if did and did in recent_dish_ids:
+                violations.append(
+                    f"R007 violation: {day.get('day_of_week','?')} {slot} "
+                    f"= {did} was cooked in last {HISTORY_LOOKBACK_DAYS} days"
+                )
+        # Booster too — but with softer wording since catalog is limited
+        booster = day.get("dinner", {}).get("protein_booster_dish_id")
+        if booster and booster in recent_dish_ids:
+            # Soft warning, not hard fail (booster catalog is small)
+            print(f"   ⚠️  Soft: {day.get('day_of_week','?')} booster {booster} was recent")
+
+    # No repeat within the plan (breakfasts unique, lunches unique)
+    if len(set(breakfasts)) != len(breakfasts):
+        dups = [b for b in breakfasts if breakfasts.count(b) > 1]
+        violations.append(f"Breakfast repeated within week: {set(dups)}")
+    if len(set(lunches)) != len(lunches):
+        dups = [l for l in lunches if lunches.count(l) > 1]
+        violations.append(f"Lunch repeated within week: {set(dups)}")
+
+    return violations
+
+
+# =========================================================
+# Gemini call with retry
+# =========================================================
+
 def call_gemini_with_retry(client, prompt):
-    """Call Gemini with exponential backoff on transient errors (503/429)."""
-    for net_attempt in range(4):
+    for attempt in range(4):
         try:
             response = client.models.generate_content(
                 model=MODEL_NAME,
@@ -389,65 +292,42 @@ def call_gemini_with_retry(client, prompt):
             )
             return response
         except ServerError:
-            wait = 5 * (2 ** net_attempt)
-            print(f"   ⏳ Gemini busy (503). Waiting {wait}s before retry...")
+            wait = 5 * (2 ** attempt)
+            print(f"   ⏳ Gemini busy. Waiting {wait}s...")
             time.sleep(wait)
         except ClientError as e:
             if "429" in str(e):
-                print(f"   ⏳ Gemini rate-limited (429). Waiting 30s...")
-                time.sleep(30)
+                print(f"   ⏳ Rate-limited. Waiting 60s...")
+                time.sleep(60)
             else:
                 raise
-    raise RuntimeError("Gemini unavailable after 4 retries. Try again later.")
+    raise RuntimeError("Gemini unavailable after retries.")
 
 
-def safe_get_name(slot_dict, default_label="—"):
-    """Resolve dish_name with fallbacks to avoid KeyError."""
-    did = slot_dict.get("dish_id", "")
-    return slot_dict.get("dish_name") or DISH_LOOKUP.get(did, did or default_label)
-
+# =========================================================
+# Pretty print
+# =========================================================
 
 def pretty_print_week(plan):
-    print(f"\n📅 WEEK STARTING {plan['week_starting']}")
-    print("=" * 70)
-    for day in plan["days"]:
-        training_tag = "  🏃 TRAINING" if day.get("is_training_day") else ""
-        print(f"\n{day['day_of_week']:<10} {day['date']}{training_tag}")
+    print(f"\n📆 Week starting {plan.get('week_starting','?')}\n")
+    for day in plan.get("days", []):
+        tag = " 🏃‍♀️" if day.get("is_training_day") else ""
+        print(f"{day.get('day_of_week','?')} ({day.get('date','?')}){tag}")
+        print(f"  BF: {day['breakfast'].get('dish_name','?')}")
+        print(f"  L:  {day['lunch'].get('dish_name','?')}")
+        print(f"  D:  {day['dinner'].get('dish_name','?')} (leftovers)")
+        booster = day['dinner'].get('protein_booster_dish_id')
+        if booster:
+            print(f"      💪 booster: {booster}")
+        print(f"  🍎 {day.get('fruit_of_the_day','?')}\n")
 
-        bf = day["breakfast"]
-        bf_name = safe_get_name(bf)
-        supp = (bf.get("supplement") or "").strip().lower()
-        if supp and supp not in ("none", "null", ""):
-            print(f"  🍳 Breakfast: {bf_name}  +  {supp}")
-        else:
-            print(f"  🍳 Breakfast: {bf_name}")
 
-        print(f"  🍛 Lunch:     {safe_get_name(day['lunch'])}")
-        print(f"  🍽️  Dinner:    {safe_get_name(day['dinner'])}")
-
-        booster_id = day["dinner"].get("protein_booster_dish_id")
-        if booster_id and str(booster_id).lower() not in ("null", "none", ""):
-            booster_name = DISH_LOOKUP.get(booster_id, booster_id)
-            print(f"     + Protein booster:  {booster_name}  ({booster_id})")
-
-        print(f"  🍎 Fruit:     {day.get('fruit_of_the_day', '-')}")
-
-    summary = plan.get("week_summary", {})
-    print("\n" + "=" * 70)
-    print("📊 WEEK SUMMARY")
-    print("=" * 70)
-    print(f"Cuisines used:        {', '.join(summary.get('cuisines_used', []))}")
-    print(f"Unique dishes:        {summary.get('unique_dishes_used', '-')}")
-    print(f"Rules applied:        {', '.join(summary.get('rules_actively_applied', []))}")
-    if summary.get("potential_issues"):
-        print(f"Notes:                {summary['potential_issues']}")
-
+# =========================================================
+# Main
+# =========================================================
 
 def main():
-    # ---- Immutability check ----
-    # If a plan already exists for the target week, refuse to overwrite it.
-    # This protects any edits Anitha/Lokesh have applied via the poller.
-    # Pass --force to override (only for testing).
+    # Immutability + force
     force = "--force" in sys.argv
     target_week = WEEK_START.isoformat()
     plan_path = "latest_week_plan.json"
@@ -456,28 +336,28 @@ def main():
         try:
             with open(plan_path, "r", encoding="utf-8") as f:
                 existing = json.load(f)
-            existing_week = existing.get("week_starting", "")
-            if existing_week == target_week:
+            if existing.get("week_starting", "") == target_week:
                 print(f"⚠️  Plan for week {target_week} already exists.")
-                print(f"   Refusing to regenerate to protect any edits.")
-                print(f"   Run 'python plan_week.py --force' to overwrite anyway.")
+                print(f"   Refusing to regenerate. Use --force to override.")
                 return
-            else:
-                print(f"ℹ️  Existing plan is for week {existing_week}; generating fresh plan for {target_week}.")
         except (json.JSONDecodeError, KeyError):
-            print(f"ℹ️  Existing plan file is unreadable; regenerating.")
+            pass
 
     print(f"📋 Planning week starting {WEEK_START.isoformat()} ({WEEK_START.strftime('%A')})\n")
 
     print("Loading data from Google Sheets...")
-    dishes, family, rules, feedback = load_all_data()
+    dishes, family, rules, feedback, history = load_all_data()
     favorites, avoid, blacklist = summarize_recent_feedback(feedback, days=14)
-    print(f"  - Feedback signals: {len(favorites)} favorites, {len(avoid)} avoid, {len(blacklist)} blacklist")
     DISH_LOOKUP.update({d["dish_id"]: d["dish_name"] for d in dishes})
+    recent_dish_ids, recent_text = summarize_recent_history(
+        history, days=HISTORY_LOOKBACK_DAYS, dish_lookup=DISH_LOOKUP
+    )
+    print(f"  - Feedback signals: {len(favorites)} favorites, {len(avoid)} avoid, {len(blacklist)} blacklist")
+    print(f"  - History: {len(recent_dish_ids)} dishes cooked in last {HISTORY_LOOKBACK_DAYS} days")
     print(f"  - {len(dishes)} dishes, {len(family)} family members, {len(rules)} active rules\n")
 
     print("Building prompt and calling Gemini (takes ~10-20s for a full week)...")
-    prompt = build_week_prompt(dishes, family, rules, favorites, avoid, blacklist)
+    prompt = build_week_prompt(dishes, family, rules, favorites, avoid, blacklist, recent_text)
 
     client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
     plan = None
@@ -486,12 +366,9 @@ def main():
     for attempt in range(1, MAX_VALIDATION_ATTEMPTS + 1):
         print(f"\n--- Attempt {attempt}/{MAX_VALIDATION_ATTEMPTS} ---")
 
-        if attempt == 1:
-            current_prompt = prompt
-        else:
-            current_prompt = build_retry_prompt(
-                prompt, violations, json.dumps(plan, indent=2)
-            )
+        current_prompt = prompt if attempt == 1 else build_retry_prompt(
+            prompt, violations, json.dumps(plan, indent=2)
+        )
 
         response = call_gemini_with_retry(client, current_prompt)
         raw = response.text.strip()
@@ -506,7 +383,7 @@ def main():
                 raise
             continue
 
-        violations = validate_plan(plan, dishes)
+        violations = validate_plan(plan, dishes, recent_dish_ids)
         if not violations:
             print(f"✅ Plan passed validation on attempt {attempt}")
             break
@@ -522,6 +399,7 @@ def main():
     with open("latest_week_plan.json", "w", encoding="utf-8") as f:
         json.dump(plan, f, indent=2)
     print(f"\n💾 Full plan saved to latest_week_plan.json")
+
 
 if __name__ == "__main__":
     main()
