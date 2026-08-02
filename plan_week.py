@@ -12,6 +12,7 @@ Resilient to transient API errors (503/429) with exponential backoff.
 """
 
 import os
+import sys
 import json
 import time
 from datetime import date, timedelta
